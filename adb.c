@@ -24,7 +24,7 @@
 #define SYNC_TIME_US 70
 #define STOP_TIME_US 100
 #define SRQ_TIME_US 300
-#define TLT_MIN_TIME_US 140
+#define TLT_TIME_US 200
 #define DATA_0_L_TIME_US 65
 #define DATA_0_H_TIME_US 35
 #define DATA_1_L_TIME_US 35
@@ -33,6 +33,10 @@
 // threshold after which we assume it's a 1 and not a 0.  
 #define DATA_IS_1_LOW_THRESHOLD 40
 
+#define CMD_RESET 0
+#define CMD_FLUSH 1
+#define CMD_LISTEN 2
+#define CMD_TALK 3
 
 typedef enum {
     Unknown,              //  initial state
@@ -41,16 +45,15 @@ typedef enum {
     Attention,            // 800 us, low by host
     Sync,                 //  70 us, high by host
     CommandDone,          //  we just finished reading the command byte
-    DataDone,             //  we just finished reading the 16-bit value
-    StopCommandDone,      // min 100 us, low; stop bit after command; just finished reading the bit
+    ListenDataDone,       //  we just finished reading the 16-bit value
     Tlt,                  // 140-260 us, high
-    StartDataDone,        // we just finished reading the start bit
-    StopDataDone,         // we just finished reading the stop bit
     Srq,                  // 300 us, low by device (note: during stop bit)
     ListenDataLo,         //  35-65 us, low, data started, we'll figure out what it is based on length
     ListenData0Hi,        //  35 us, high
     ListenData1Lo,        //  35 us, low
     ListenData1Hi,        //  65 us, high
+    ListenStartBitLo,
+    ListenStartBitHi,
     ListenStopBitLo,      // a 0 bit
     ListenStopBitHi,      // a 
     TalkData0Lo,
@@ -68,8 +71,9 @@ static uint16_t adb_kbd_regs[4] = { 0 };
 #define INTERRUPTS_ON()  do { gpio_set_irq_enabled(ADB_GPIO, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true); } while (0)
 #define INTERRUPTS_OFF() do { gpio_set_irq_enabled(ADB_GPIO, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false); } while (0)
 
-static uint64_t last_rise_t = 0;
-static uint64_t last_fall_t = 0;
+static uint64_t last_any_transition_us = 0;
+static uint64_t last_rise_us = 0;
+static uint64_t last_fall_us = 0;
 
 static AdbState in_state = Unknown;
 static bool is_talking = false;
@@ -97,6 +101,11 @@ void adb_init() {
 }
 
 void adb_update() {
+    uint64_t cur_time = time_us_64();
+    if (cur_time - last_any_transition_us > 1000) {
+        // we haven't seen a transition in a while; reset state
+        in_state = Idle;
+    }
 }
 
 void adb_kbd_report(hid_keyboard_report_t const *report) {
@@ -105,7 +114,29 @@ void adb_kbd_report(hid_keyboard_report_t const *report) {
 void adb_mouse_report(hid_keyboard_report_t const *report) {
 }
 
-void handle_command(uint8_t command) {
+uint8_t cmd_addr = 0;
+uint8_t cmd_cmd = 0;
+uint8_t cmd_reg = 0;
+
+void handle_command(uint8_t command_byte) {
+    cmd_addr = (command_byte >> 4) & 0xf;
+    cmd_cmd = (command_byte >> 2) & 3;
+    cmd_reg = command_byte & 3;
+
+    printf("command: addr: %d, cmd: %d, reg: %d\n", cmd_addr, cmd_cmd, cmd_reg);
+    if (cmd_cmd == CMD_RESET) {
+    } else if (cmd_cmd == CMD_FLUSH) {
+    } else if (cmd_cmd == CMD_LISTEN) {
+        // we'll automatically transition to Tlt after this, after which a data read cycle will start
+        data_expected_bits = 16;
+        data_next_state = ListenDataDone;
+    } else if (cmd_cmd == CMD_TALK) {
+        // TODO
+    }
+}
+
+void handle_listen_data(uint16_t data) {
+    printf("listen data: %d\n", data);
 }
 
 // we're going to be generous and give ourselves 30% tolerance; we'll also
@@ -118,8 +149,8 @@ void expect_fall_after(uint64_t cur_time, bool is_rise, uint32_t time) {
         printf("expected fall irq, state: %d\n", in_state);
     uint32_t min_time = time * 0.7;
     uint32_t max_time = time * 1.3;
-    if (cur_time - last_fall_t < min_time || cur_time - last_fall_t > max_time)
-        printf("expected fall after %d us, got %d us, state: %d\n", time, cur_time - last_fall_t, in_state);
+    if (cur_time - last_rise_us < min_time || cur_time - last_rise_us > max_time)
+        printf("expected fall after %d us, got %d us, state: %d\n", time, cur_time - last_rise_us, in_state);
 }
 
 void expect_rise_after(uint64_t cur_time, bool is_rise, uint32_t time) {
@@ -129,8 +160,18 @@ void expect_rise_after(uint64_t cur_time, bool is_rise, uint32_t time) {
         printf("expected rise irq, state: %d\n", in_state);
     uint32_t min_time = time * 0.7;
     uint32_t max_time = time * 1.3;
-    if (cur_time - last_rise_t < min_time || cur_time - last_rise_t > max_time)
-        printf("expected rise after %d us, got %d us, state: %d\n", time, cur_time - last_rise_t, in_state);
+    if (cur_time - last_fall_us < min_time || cur_time - last_fall_us > max_time)
+        printf("expected rise after %d us, got %d us, state: %d\n", time, cur_time - last_fall_us, in_state);
+}
+
+void expect_fall_after_nomax(uint64_t cur_time, bool is_rise, uint32_t time) {
+    if (gpio_get(ADB_GPIO))
+        printf("expected low, state: %d\n", in_state);
+    if (!is_rise)
+        printf("expected fall irq, state: %d\n", in_state);
+    uint32_t min_time = time * 0.7;
+    if (cur_time - last_rise_us < min_time)
+        printf("expected fall after %d us, got %d us, state: %d\n", time, cur_time - last_rise_us, in_state);
 }
 
 void expect_rise_after_nomax(uint64_t cur_time, bool is_rise, uint32_t time) {
@@ -139,8 +180,8 @@ void expect_rise_after_nomax(uint64_t cur_time, bool is_rise, uint32_t time) {
     if (is_rise)
         printf("expected rise irq, state: %d\n", in_state);
     uint32_t min_time = time * 0.7;
-    if (cur_time - last_rise_t < min_time)
-        printf("expected rise after %d us, got %d us, state: %d\n", time, cur_time - last_rise_t, in_state);
+    if (cur_time - last_fall_us < min_time)
+        printf("expected rise after %d us, got %d us, state: %d\n", time, cur_time - last_fall_us, in_state);
 }
 
 
@@ -160,10 +201,11 @@ void adb_state_machine(uint64_t cur_time, bool is_rise, bool is_fall) {
         in_state = Idle;
         break;
     case Idle:
-        expect_gpio_low();
+        if (gpio_get(ADB_GPIO))
+            printf("expected low, state: %d\n");
         if (is_fall) {
             in_state = Attention;
-        } else bad_irq();
+        }
         break;
     case Attention:
         expect_rise_after(cur_time, is_rise, ATTENTION_TIME_US);
@@ -178,35 +220,40 @@ void adb_state_machine(uint64_t cur_time, bool is_rise, bool is_fall) {
 
     case CommandDone:
         handle_command(data_value & 0xff);
-
-        // we still need to read a stop bit
-        in_state = ListenDataLo;
-        data_expected_bits = 1;
-        data_next_state = Tlt; // TODO -- to transition out of Tlt, if we're talking, we may need to do that work!
+        in_state = Tlt;
+        break;
+    case ListenDataDone:
+        handle_listen_data(data_value);
+        in_state = Idle;
         break;
 
     case Tlt:
-        expect_gpio_high();
-        assert(!is_talking);
-
-        if (is_fall) {
-            if (cur_time - last_rise_t >= TLT_MIN_TIME_US) {
-                in_state = Idle;
-            }
-        } else bad_irq();
-
+        expect_rise_after(cur_time, is_rise, TLT_TIME_US);
+        in_state = ListenStartBitLo;
         break;
 
+    case ListenStartBitLo:
+        expect_rise_after(cur_time, is_rise, DATA_1_L_TIME_US);
+        in_state = ListenStartBitHi;
+        break;
+    case ListenStartBitHi:
+        expect_fall_after(cur_time, is_rise, DATA_1_H_TIME_US);
+        in_state = ListenDataLo;
+        break;
     case ListenDataLo:
         // we don't know yet whether it's a 0 or a 1
-        expect_gpio_high();
-        if (is_rise) {
-            if (cur_time - last_fall_t >= DATA_IS_1_LOW_THRESHOLD) {
-                in_state = ListenData1Hi;
-            } else {
-                in_state = ListenData0Hi;
-            }
-        } else bad_irq();
+        if (!gpio_get(ADB_GPIO) || !is_rise) {
+            printf("expected high (%d) + rise irq (%d), state: %d\n", gpio_get(ADB_GPIO), is_rise, in_state);
+            in_state = Idle;
+            return;
+        }
+
+        if (cur_time - last_fall_us >= DATA_IS_1_LOW_THRESHOLD) {
+            in_state = ListenData1Hi;
+        } else {
+            in_state = ListenData0Hi;
+        }
+        break;
     case ListenData1Hi:
         expect_fall_after(cur_time, is_rise, DATA_1_H_TIME_US);
         data_value = data_value | (1 << (data_expected_bits-1));
@@ -248,10 +295,11 @@ void adb_isr(uint gpio, uint32_t events) {
 
     adb_state_machine(cur_time, is_rise, is_fall);
 
+    last_any_transition_us = cur_time;
     if (events & GPIO_IRQ_EDGE_RISE) {
-        last_rise_t = cur_time;
+        last_rise_us = cur_time;
     } else {
-        last_fall_t = cur_time;
+        last_fall_us = cur_time;
     }
 
     // note: gpio_acknowledge_irq is called automatically
