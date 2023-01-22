@@ -4,16 +4,16 @@
 #include <hardware/uart.h>
 #include <hardware/irq.h>
 
-#include "keycodes.h"
+#include "sun_keycodes.h"
 
 #define UART_KBD_ID uart1
 #define UART_KBD_IRQ UART1_IRQ
 #define UART_KBD_TX_PIN 4
 #define UART_KBD_RX_PIN 5
 
-void on_keyboard_rx();
+static void on_keyboard_rx();
 
-void keyboard_uart_init() {
+void sun_keyboard_uart_init() {
   uart_init(UART_KBD_ID, 1200);
   gpio_set_function(UART_KBD_TX_PIN, GPIO_FUNC_UART);
   gpio_set_function(UART_KBD_RX_PIN, GPIO_FUNC_UART);
@@ -73,7 +73,7 @@ static uint8_t hotkey_combo = KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_LE
 static uint8_t active_key_list[128];
 static uint8_t active_keys = 0;
 
-void process_kbd_report(hid_keyboard_report_t const *report) {
+void sun_kbd_report(hid_keyboard_report_t const *report) {
   uint8_t current_key_list[128];
   memset(current_key_list, 0, sizeof(current_key_list));
 

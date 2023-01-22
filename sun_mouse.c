@@ -14,7 +14,7 @@ static uint32_t interval = 40;
 
 #define UART_MOUSE_ID uart0
 #define UART_MOUSE_TX_PIN 0
-void mouse_uart_init() {
+void sun_mouse_uart_init() {
   uart_init(UART_MOUSE_ID, 1200);
   gpio_set_function(UART_MOUSE_TX_PIN, GPIO_FUNC_UART);
   uart_set_hw_flow(UART_MOUSE_ID, false, false);
@@ -48,7 +48,7 @@ static uint32_t push_tail_packet() {
   return 15;
 }
 
-void mouse_tx() {
+void sun_mouse_tx() {
   static uint32_t start_ms = 0;
   if ((board_millis() - start_ms) < interval) {
     return;
@@ -65,7 +65,7 @@ void mouse_tx() {
   }
 }
 
-void process_mouse_report(hid_mouse_report_t const * report) {
+void sun_mouse_report(hid_mouse_report_t const * report) {
   btns = ((report->buttons & MOUSE_BUTTON_LEFT)   ? 0 : 4)
        | ((report->buttons & MOUSE_BUTTON_MIDDLE) ? 0 : 2)
        | ((report->buttons & MOUSE_BUTTON_RIGHT)  ? 0 : 1)

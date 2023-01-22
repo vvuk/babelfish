@@ -9,23 +9,36 @@
 #include <bsp/board.h>
 #include <tusb.h>
 
-extern void keyboard_uart_init();
-extern void mouse_uart_init();
-extern void mouse_tx();
+#include "host.h"
+
+HOST_PROTOTYPES(sun);
+
+static HostDevice hosts[] = {
+  HOST_ENTRY(sun),
+  { 0 }
+};
+
+// TODO read from flash
+static int g_current_host_index = 0;
+
+HostDevice *host = NULL;
+
 void led_blinking_task(void);
 
 int main(void) {
   board_init();
   tusb_init();
 
-  keyboard_uart_init();
-  mouse_uart_init();
+  host = &hosts[g_current_host_index];
+
+  // TODO: read hostid from storage
+  host->init();
 
   while (true) {
     tuh_task();
     led_blinking_task();
 
-    mouse_tx();
+    host->update();
   }
 
   return 0;

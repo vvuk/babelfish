@@ -27,8 +27,7 @@
 #include <hardware/uart.h>
 #include <tusb.h>
 
-extern void process_kbd_report(hid_keyboard_report_t const *report);
-extern void process_mouse_report(hid_mouse_report_t const * report);
+#include "host.h"
 
 //--------------------------------------------------------------------+
 // MACRO TYPEDEF CONSTANT ENUM DECLARATION
@@ -101,12 +100,12 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
   {
     case HID_ITF_PROTOCOL_KEYBOARD:
       TU_LOG2("HID receive boot keyboard report\r\n");
-      process_kbd_report( (hid_keyboard_report_t const*) report );
+      host->kbd_report( (hid_keyboard_report_t const*) report );
     break;
 
     case HID_ITF_PROTOCOL_MOUSE:
       TU_LOG2("HID receive boot mouse report\r\n");
-      process_mouse_report( (hid_mouse_report_t const*) report );
+      host->mouse_report( (hid_mouse_report_t const*) report );
     break;
 
     default:
@@ -176,13 +175,13 @@ static void process_generic_report(uint8_t dev_addr, uint8_t instance, uint8_t c
       case HID_USAGE_DESKTOP_KEYBOARD:
         // TU_LOG1("HID receive keyboard report\r\n");
         // Assume keyboard follow boot report layout
-        process_kbd_report( (hid_keyboard_report_t const*) report );
+        host->kbd_report( (hid_keyboard_report_t const*) report );
       break;
 
       case HID_USAGE_DESKTOP_MOUSE:
         // TU_LOG1("HID receive mouse report\r\n");
         // Assume mouse follow boot report layout
-        process_mouse_report( (hid_mouse_report_t const*) report );
+        host->mouse_report( (hid_mouse_report_t const*) report );
       break;
 
       default: break;
