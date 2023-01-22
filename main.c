@@ -12,9 +12,13 @@
 #include "host.h"
 
 HOST_PROTOTYPES(sun);
+HOST_PROTOTYPES(adb);
+HOST_PROTOTYPES(apollo);
 
 static HostDevice hosts[] = {
   HOST_ENTRY(sun),
+  HOST_ENTRY(adb),
+  HOST_ENTRY(apollo),
   { 0 }
 };
 

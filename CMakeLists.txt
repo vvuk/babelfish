@@ -17,6 +17,7 @@ add_executable(usb2sun
   sun_mouse.c
   sun_keyboard.c
   adb.c
+  apollo.c
 )
 target_include_directories(usb2sun PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(usb2sun PUBLIC pico_stdlib tinyusb_host tinyusb_board)
