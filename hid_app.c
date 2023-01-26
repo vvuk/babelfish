@@ -50,6 +50,9 @@ static struct
 
 static void process_generic_report(uint8_t dev_addr, uint8_t instance, uint8_t const* report, uint16_t len);
 
+extern void tusb_on_kbd_report(const hid_keyboard_report_t* report);
+extern void tusb_on_mouse_report(const hid_mouse_report_t* report);
+
 //--------------------------------------------------------------------+
 // TinyUSB Callbacks
 //--------------------------------------------------------------------+
@@ -100,12 +103,12 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
   {
     case HID_ITF_PROTOCOL_KEYBOARD:
       TU_LOG2("HID receive boot keyboard report\r\n");
-      host->kbd_report( (hid_keyboard_report_t const*) report );
+      tusb_on_kbd_report( (hid_keyboard_report_t const*) report );
     break;
 
     case HID_ITF_PROTOCOL_MOUSE:
       TU_LOG2("HID receive boot mouse report\r\n");
-      host->mouse_report( (hid_mouse_report_t const*) report );
+      tusb_on_mouse_report( (hid_mouse_report_t const*) report );
     break;
 
     default:
