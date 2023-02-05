@@ -23,7 +23,7 @@ static HostDevice hosts[] = {
 };
 
 // TODO read from flash
-static int g_current_host_index = 0;
+static int g_current_host_index = 2;
 
 HostDevice *host = NULL;
 

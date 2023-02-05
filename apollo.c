@@ -10,9 +10,6 @@
 #define UART_KBD_TX_PIN 4
 #define UART_KBD_RX_PIN 5
 
-#define UART_MOUSE_ID uart0
-#define UART_MOUSE_TX_PIN 0
-
 typedef enum {
     Mode0_Compatibility,
     Mode1_Keystate,
@@ -42,24 +39,18 @@ static uint16_t s_code_table[256][StateMax];
 void apollo_init() {
   gpio_set_function(UART_KBD_TX_PIN, GPIO_FUNC_UART);
   gpio_set_function(UART_KBD_RX_PIN, GPIO_FUNC_UART);
-  gpio_set_function(UART_MOUSE_TX_PIN, GPIO_FUNC_UART);
 
   uart_init(UART_KBD_ID, 1200);
   uart_set_hw_flow(UART_KBD_ID, false, false);
-  uart_set_format(UART_KBD_ID, 8, 1, UART_PARITY_NONE);
-
-  uart_init(UART_MOUSE_ID, 1200);
-  uart_set_hw_flow(UART_MOUSE_ID, false, false);
-  uart_set_format(UART_MOUSE_ID, 8, 1, UART_PARITY_NONE);
+  uart_set_format(UART_KBD_ID, 8, 1, UART_PARITY_EVEN);
 
   irq_set_exclusive_handler(UART_KBD_IRQ, on_keyboard_rx);
   irq_set_enabled(UART_KBD_IRQ, true);
 
   uart_set_irq_enables(UART_KBD_ID, true, false);
 
-  gpio_set_inover(UART_KBD_RX_PIN, GPIO_OVERRIDE_INVERT);
-  gpio_set_outover(UART_KBD_TX_PIN, GPIO_OVERRIDE_INVERT);
-  gpio_set_outover(UART_MOUSE_TX_PIN, GPIO_OVERRIDE_INVERT);
+  //gpio_set_inover(UART_KBD_RX_PIN, GPIO_OVERRIDE_INVERT);
+  //gpio_set_outover(UART_KBD_TX_PIN, GPIO_OVERRIDE_INVERT);
 }
 
 void apollo_update() {
