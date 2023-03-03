@@ -5,13 +5,12 @@
 #include <hardware/uart.h>
 #include <hardware/irq.h>
 
+#include "debug.h"
+
 #define UART_KBD_ID uart1
 #define UART_KBD_IRQ UART1_IRQ
 #define UART_KBD_TX_PIN 4
 #define UART_KBD_RX_PIN 5
-
-#define UART_MOUSE_ID uart0
-#define UART_MOUSE_TX_PIN 0
 
 typedef enum {
     Mode0_Compatibility,
@@ -42,15 +41,10 @@ static uint16_t s_code_table[256][StateMax];
 void apollo_init() {
   gpio_set_function(UART_KBD_TX_PIN, GPIO_FUNC_UART);
   gpio_set_function(UART_KBD_RX_PIN, GPIO_FUNC_UART);
-  gpio_set_function(UART_MOUSE_TX_PIN, GPIO_FUNC_UART);
 
   uart_init(UART_KBD_ID, 1200);
   uart_set_hw_flow(UART_KBD_ID, false, false);
   uart_set_format(UART_KBD_ID, 8, 1, UART_PARITY_NONE);
-
-  uart_init(UART_MOUSE_ID, 1200);
-  uart_set_hw_flow(UART_MOUSE_ID, false, false);
-  uart_set_format(UART_MOUSE_ID, 8, 1, UART_PARITY_NONE);
 
   irq_set_exclusive_handler(UART_KBD_IRQ, on_keyboard_rx);
   irq_set_enabled(UART_KBD_IRQ, true);
@@ -59,7 +53,6 @@ void apollo_init() {
 
   gpio_set_inover(UART_KBD_RX_PIN, GPIO_OVERRIDE_INVERT);
   gpio_set_outover(UART_KBD_TX_PIN, GPIO_OVERRIDE_INVERT);
-  gpio_set_outover(UART_MOUSE_TX_PIN, GPIO_OVERRIDE_INVERT);
 }
 
 void apollo_update() {
@@ -106,7 +99,7 @@ void apollo_kbd_report(hid_keyboard_report_t const *report) {
             code = s_code_table[hidcode][State_Unshifted];
         
         if (code != 0) {
-            printf("Translating %02x to %04x\n", hidcode, code);
+            dbg("Translating %02x to %04x\n", hidcode, code);
             uart_putc(UART_KBD_ID, code);
         }
     } else {
@@ -123,11 +116,20 @@ void on_keyboard_rx() {
     static uint32_t kbd_cmd = 0;
     static bool kbd_reading_cmd = false;
     static int kbd_cmd_bytes = 0;
+	static bool first_irq = true;
 
     bool cmd_handled;
 
     while (uart_is_readable(UART_KBD_ID)) {
         uint8_t ch = uart_getc(UART_KBD_ID);
+
+		// we seem to get a bogus irq on startup, so ignore the first char
+		if (first_irq) {
+			first_irq = false;
+			continue;
+		}
+
+		dbg("[% 8d] IN: %02x (bytes: %d cmd: %08lx reading_cmd: %d)\n", board_millis(), ch, kbd_cmd_bytes, kbd_cmd, kbd_reading_cmd);
 
         if (!kbd_reading_cmd) {
             if (ch == 0xff) {
@@ -135,14 +137,15 @@ void on_keyboard_rx() {
                 kbd_cmd = 0;
                 kbd_cmd_bytes = 0;
             } else {
-                printf("Unknown keyboard command start byte [not-in-cmd]: %02x\n", ch);
+                dbg("Unknown keyboard command start byte [not-in-cmd]: %02x\n", ch);
+				continue;
             }
         } else {
             if (ch == 0x00) {
                 kbd_reading_cmd = false;
             } else {
                 if (kbd_cmd_bytes == 4) {
-                    printf("Too-long keyboard command [in-cmd]: %08x, got %02x\n", kbd_cmd, ch);
+                    dbg("Too-long keyboard command [in-cmd]: %08lx, got %02x\n", kbd_cmd, ch);
                     kbd_reading_cmd = false;
                     continue;
                 }
@@ -155,17 +158,17 @@ void on_keyboard_rx() {
         if (kbd_reading_cmd) 
             continue;
 
-        printf("Keyboard command: %08x\n", kbd_cmd);
+        dbg("Keyboard command: %08lx\n", kbd_cmd);
 
         cmd_handled = true;
         switch (kbd_cmd) {
             case 0x00:
-                if (kbd_cmd_bytes != 1) { printf("Got %08x command with %d bytes\n", kbd_cmd, kbd_cmd_bytes); }
+                if (kbd_cmd_bytes != 1) { dbg("Got %08lx command with %d bytes\n", kbd_cmd, kbd_cmd_bytes); }
                 kbd_mode = Mode0_Compatibility;
                 break;
             
             case 0x01:
-                if (kbd_cmd_bytes != 1) { printf("Got %08x command with %d bytes\n", kbd_cmd, kbd_cmd_bytes); }
+                if (kbd_cmd_bytes != 1) { dbg("Got %08lx command with %d bytes\n", kbd_cmd, kbd_cmd_bytes); }
                 kbd_mode = Mode1_Keystate;
                 break;
 
@@ -177,7 +180,7 @@ void on_keyboard_rx() {
                 // this code also used to either stay in Mode0, or reset to Mode1
             case 0x1166: // unknown
             case 0x1117: // unknown
-                printf("Unhandled\n");
+                dbg("Unhandled\n");
                 cmd_handled = false;
         }
 

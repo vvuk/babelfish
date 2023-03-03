@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 add_definitions(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
-set(PICO_SDK_PATH "/home/vladimir/proj/pico-sdk")
+set(PICO_SDK_PATH "/opt/UnitySrc/proj/pico-sdk")
 
 include(pico_sdk_import.cmake)
 project(usb2multi C CXX ASM)
@@ -20,11 +20,13 @@ add_executable(usb2multi
   sun_keyboard.c
   adb.c
   apollo.c
+  debug.c
 )
 target_include_directories(usb2multi PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/external/pico-pio-usb/src)
 target_link_libraries(usb2multi PUBLIC pico_stdlib tinyusb_host tinyusb_board pico_pio_usb)
+target_compile_definitions(usb2multi PRIVATE DEBUG)
 
 pico_enable_stdio_usb(usb2multi 0)
 pico_enable_stdio_uart(usb2multi 0)

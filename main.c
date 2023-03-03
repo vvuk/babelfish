@@ -17,6 +17,7 @@
 #endif
 
 #include "host.h"
+#include "debug.h"
 
 HOST_PROTOTYPES(sun);
 HOST_PROTOTYPES(adb);
@@ -30,7 +31,7 @@ static HostDevice hosts[] = {
 };
 
 // TODO read from flash
-static int g_current_host_index = 0;
+static int g_current_host_index = 2;
 
 HostDevice *host = NULL;
 
@@ -42,6 +43,8 @@ int main(void) {
   set_sys_clock_khz(120000, true);
 
   sleep_ms(10);
+
+  DEBUG_INIT();
 
 #if USE_SECONDARY_USB
   // Initialize Core 1, and put PIO-USB on it with TinyUSB
@@ -58,6 +61,8 @@ int main(void) {
 
   // TODO: read hostid from storage
   host->init();
+
+  dbg("Initialized, host '%s'\n", host->name);
 
   while (true) {
     #if !USE_SECONDARY_USB
