@@ -44,15 +44,15 @@ void apollo_init() {
 
   uart_init(UART_KBD_ID, 1200);
   uart_set_hw_flow(UART_KBD_ID, false, false);
-  uart_set_format(UART_KBD_ID, 8, 1, UART_PARITY_NONE);
+  uart_set_format(UART_KBD_ID, 8, 1, UART_PARITY_EVEN);
 
   irq_set_exclusive_handler(UART_KBD_IRQ, on_keyboard_rx);
   irq_set_enabled(UART_KBD_IRQ, true);
 
   uart_set_irq_enables(UART_KBD_ID, true, false);
 
-  gpio_set_inover(UART_KBD_RX_PIN, GPIO_OVERRIDE_INVERT);
-  gpio_set_outover(UART_KBD_TX_PIN, GPIO_OVERRIDE_INVERT);
+  //gpio_set_inover(UART_KBD_RX_PIN, GPIO_OVERRIDE_INVERT);
+  //gpio_set_outover(UART_KBD_TX_PIN, GPIO_OVERRIDE_INVERT);
 }
 
 void apollo_update() {
