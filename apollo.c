@@ -13,10 +13,10 @@
 #define UART_KBD_RX_PIN 5
 
 typedef enum {
-    Mode0_Compatibility,
-    Mode1_Keystate,
-    Mode2_RelativeCursor,
-    Mode3_AbsoluteCursor
+    Mode0_Compatibility = 0,
+    Mode1_Keystate = 1,
+    Mode2_RelativeCursorControl = 2,
+    Mode3_AbsoluteCursorControl = 3
 } KeyboardMode;
 
 typedef enum {
@@ -38,6 +38,23 @@ static void on_keyboard_rx();
 // defined at end of file
 static uint16_t s_code_table[256][StateMax];
 
+static void kbd_xmit(char c) {
+	uart_putc_raw(UART_KBD_ID, c);
+}
+
+static void force_mode(KeyboardMode mode) {
+	dbg("Setting keyboard mode to %d\n", mode);
+	kbd_xmit(0xff);
+	kbd_xmit((char) mode);
+	kbd_mode = mode;
+}
+
+static void set_mode(KeyboardMode mode) {
+	if (kbd_mode != mode) {
+		force_mode(mode);
+	}
+}
+
 void apollo_init() {
   gpio_set_function(UART_KBD_TX_PIN, GPIO_FUNC_UART);
   gpio_set_function(UART_KBD_RX_PIN, GPIO_FUNC_UART);
@@ -50,66 +67,141 @@ void apollo_init() {
   irq_set_enabled(UART_KBD_IRQ, true);
 
   uart_set_irq_enables(UART_KBD_ID, true, false);
-
-  //gpio_set_inover(UART_KBD_RX_PIN, GPIO_OVERRIDE_INVERT);
-  //gpio_set_outover(UART_KBD_TX_PIN, GPIO_OVERRIDE_INVERT);
 }
 
 void apollo_update() {
 }
 
-
 void apollo_kbd_report(hid_keyboard_report_t const *report) {
     static bool down_state[256] = {false};
+	static uint8_t mod_down_state = 0;
 
-    uint8_t up_keys[6]; // up to 6 keys could have been released this frame
+    uint8_t up_keys[12]; // up to 12 keys could have been released this frame (6 + modifiers)
     uint8_t up_key_count = 0;
+	uint8_t new_mod_down = 0;
 
-    KeyState selector = State_Unshifted;
+	if (kbd_mode == Mode0_Compatibility) {
+		uint8_t hidcode = report->keycode[0];
+		uint16_t code = 0;
 
-    bool ctrl =  (report->modifier & (KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTCTRL)) != 0;
-    bool shift = (report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT)) != 0;
-    //bool caps = 
-    //bool repeat =
+		bool ctrl =  (report->modifier & (KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTCTRL)) != 0;
+		bool shift = (report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT)) != 0;
 
-    // find any released keys.  this is a silly loop.
-    for (int hidk = 1; hidk < 256; hidk++) {
-        if (!down_state[hidk])
-            continue;
-        for (int j = 0; j < 6; j++) {
-            if (report->keycode[j] == hidk) {
-                down_state[hidk] = false;
-                up_keys[up_key_count++] = hidk;
-                break;
-            }
-        }
-    }
+		if (ctrl)
+			code = s_code_table[hidcode][State_Control];
+		else if (shift)
+			code = s_code_table[hidcode][State_Shifted];
+		else
+			code = s_code_table[hidcode][State_Unshifted];
+			
+		dbg("Mode0: Translating %02x to %04x (%s %s)\n", hidcode, code, ctrl ? "ctrl" : "", shift ? "shift" : "");
+		if (code != 0) {
+			kbd_xmit(code);
+		}
 
-    // we're only going to report on the first one, though we have to track down_state for all
-    uint8_t hidcode = report->keycode[0];
+		return;
+	}
 
-    if (kbd_mode == Mode0_Compatibility) {
-        uint16_t code = 0;
+	// This is messy.  We really want raw key down/up from HID, but we're not in that mode.  So we have to reconstruct.
+	// Rule is -- modifiers go down before keys; keys go up before modifiers.
+	if (mod_down_state ^ report->modifier) {
+		uint8_t up_mod = mod_down_state ^ report->modifier;
+		new_mod_down = report->modifier & ~mod_down_state;
+		mod_down_state = report->modifier;
 
-        if (ctrl)
-            code = s_code_table[hidcode][State_Control];
-        else if (shift)
-            code = s_code_table[hidcode][State_Shifted];
-        else
-            code = s_code_table[hidcode][State_Unshifted];
-        
-        if (code != 0) {
-            dbg("Translating %02x to %04x\n", hidcode, code);
-            uart_putc(UART_KBD_ID, code);
-        }
-    } else {
-        // assume that Mode 1, 2, 3 all want key state
-        // TODO
-        // TODO mode1 will want us to translate modifier keys to up/down of that key as well
-    }
+		if (up_mod & KEYBOARD_MODIFIER_LEFTSHIFT) {
+			up_keys[up_key_count++] = HID_KEY_SHIFT_LEFT;
+		} else if (up_mod & KEYBOARD_MODIFIER_RIGHTSHIFT) {
+			up_keys[up_key_count++] = HID_KEY_SHIFT_RIGHT;
+		} else if (up_mod & KEYBOARD_MODIFIER_LEFTCTRL) {
+			up_keys[up_key_count++] = HID_KEY_CONTROL_LEFT;
+		} else if (up_mod & KEYBOARD_MODIFIER_RIGHTCTRL) {
+			up_keys[up_key_count++] = HID_KEY_CONTROL_RIGHT;
+		} else if (up_mod & KEYBOARD_MODIFIER_LEFTALT) {
+			up_keys[up_key_count++] = HID_KEY_ALT_LEFT;
+		} else if (up_mod & KEYBOARD_MODIFIER_RIGHTALT) {
+			up_keys[up_key_count++] = HID_KEY_ALT_RIGHT;
+		}
+	}
+
+	// find any released keys.  this is a silly loop.
+	for (int hidk = 1; hidk < 256; hidk++) {
+		if (!down_state[hidk])
+			continue;
+		for (int j = 0; j < 6; j++) {
+			if (report->keycode[j] == hidk) {
+				down_state[hidk] = false;
+				up_keys[up_key_count++] = hidk;
+				break;
+			}
+		}
+	}
+
+	set_mode(Mode1_Keystate);
+
+	// write all the released keys
+	for (int i = 0; i < up_key_count; i++) {
+		uint8_t hidcode = up_keys[i];
+		uint16_t code = s_code_table[hidcode][State_Up];
+		if (code != 0) {
+			kbd_xmit(code);
+		}
+	}
+
+	// now new down modifiers
+	if (new_mod_down) {
+		if (new_mod_down & KEYBOARD_MODIFIER_LEFTSHIFT) {
+			uint16_t code = s_code_table[HID_KEY_SHIFT_LEFT][State_Down];
+			kbd_xmit(code);
+		} else if (new_mod_down & KEYBOARD_MODIFIER_RIGHTSHIFT) {
+			uint16_t code = s_code_table[HID_KEY_SHIFT_RIGHT][State_Down];
+			kbd_xmit(code);
+		} else if (new_mod_down & KEYBOARD_MODIFIER_LEFTCTRL) {
+			uint16_t code = s_code_table[HID_KEY_CONTROL_LEFT][State_Down];
+			kbd_xmit(code);
+		} else if (new_mod_down & KEYBOARD_MODIFIER_RIGHTCTRL) {
+			uint16_t code = s_code_table[HID_KEY_CONTROL_RIGHT][State_Down];
+			kbd_xmit(code);
+		} else if (new_mod_down & KEYBOARD_MODIFIER_LEFTALT) {
+			uint16_t code = s_code_table[HID_KEY_ALT_LEFT][State_Down];
+			kbd_xmit(code);
+		} else if (new_mod_down & KEYBOARD_MODIFIER_RIGHTALT) {
+			uint16_t code = s_code_table[HID_KEY_ALT_RIGHT][State_Down];
+			kbd_xmit(code);
+		}
+	}
+
+	for (int i = 0; i < 6; i++) {
+		uint8_t hidcode = report->keycode[i];
+		if (hidcode == 0)
+			continue;
+
+		uint16_t code = s_code_table[hidcode][State_Down];
+		if (code != 0) {
+			kbd_xmit(code);
+		}
+		down_state[hidcode] = true;
+	}
 }
 
 void apollo_mouse_report(hid_mouse_report_t const *report) {
+	if (kbd_mode == Mode0_Compatibility) {
+		// don't report mouse status in mode 0
+		// there's something about sending the same report prefixed with a 0xdf in
+		// the mame code, but I have no idea why that would be good
+		return;
+	}
+
+	set_mode(Mode2_RelativeCursorControl);
+	kbd_xmit(0xf0 ^ report->buttons);
+	kbd_xmit(report->x);
+	kbd_xmit(report->y);
+}
+
+static void kbd_tx_str(const char *str) {
+	while (*str) {
+		kbd_xmit(*str++);
+	}
 }
 
 void on_keyboard_rx() {
@@ -129,7 +221,7 @@ void on_keyboard_rx() {
 			continue;
 		}
 
-		dbg("[% 8d] IN: %02x (bytes: %d cmd: %08lx reading_cmd: %d)\n", board_millis(), ch, kbd_cmd_bytes, kbd_cmd, kbd_reading_cmd);
+		dbg("[% 8d] IN: %02x (bytes: %d cmd: %08lx reading_cmd: %d)  ", board_millis(), ch, kbd_cmd_bytes, kbd_cmd, kbd_reading_cmd);
 
         if (!kbd_reading_cmd) {
             if (ch == 0xff) {
@@ -141,58 +233,77 @@ void on_keyboard_rx() {
 				continue;
             }
         } else {
-            if (ch == 0x00) {
-                kbd_reading_cmd = false;
-            } else {
-                if (kbd_cmd_bytes == 4) {
-                    dbg("Too-long keyboard command [in-cmd]: %08lx, got %02x\n", kbd_cmd, ch);
-                    kbd_reading_cmd = false;
-                    continue;
-                }
-                kbd_cmd = (kbd_cmd << 8) | ch;
-                kbd_cmd_bytes++;
-            }
+			if (kbd_cmd_bytes == 4) {
+				dbg("Too-long keyboard command [in-cmd]: %08lx, got %02x\n", kbd_cmd, ch);
+				kbd_reading_cmd = false;
+				continue;
+			}
+			kbd_cmd = (kbd_cmd << 8) | ch;
+			kbd_cmd_bytes++;
         }
 
-        // If we're still reading a command (didn't get a 0x00 byte), continue doing so
-        if (kbd_reading_cmd) 
-            continue;
+        dbg(" -- cmd (%d bytes): %08lx\n", kbd_cmd_bytes, kbd_cmd);
 
-        dbg("Keyboard command: %08lx\n", kbd_cmd);
+        bool cmd_handled = false;
 
-        cmd_handled = true;
-        switch (kbd_cmd) {
-            case 0x00:
-                if (kbd_cmd_bytes != 1) { dbg("Got %08lx command with %d bytes\n", kbd_cmd, kbd_cmd_bytes); }
-                kbd_mode = Mode0_Compatibility;
-                break;
-            
-            case 0x01:
-                if (kbd_cmd_bytes != 1) { dbg("Got %08lx command with %d bytes\n", kbd_cmd, kbd_cmd_bytes); }
-                kbd_mode = Mode1_Keystate;
-                break;
+		if (kbd_cmd_bytes == 1) {
+			switch (kbd_cmd) {
+				case 0x00:
+					force_mode(Mode0_Compatibility);
+					cmd_handled = true;
+					break;
+				
+				case 0x01:
+					force_mode(Mode1_Keystate);
+					cmd_handled = true;
+					break;
+			}
+		} else if (kbd_cmd_bytes == 2) {
+			switch (kbd_cmd) {
+				case 0x1221: { // keyboard identification
+					dbg("apollo: keyboard ident request\n");
 
-            case 0x2181: // beeper on for 300ms
-            case 0x2182: // beeper off
-            case 0x1221: // keyboard identification
-                // english: "3-@\r2-0\rSD-03863-MS\r"
-                // german:  "3-A\r2-0\rSD-03863-MS\r"
-                // this code also used to either stay in Mode0, or reset to Mode1
-            case 0x1166: // unknown
-            case 0x1117: // unknown
-                dbg("Unhandled\n");
-                cmd_handled = false;
-        }
+					const char english_ident[] = "3-@\r2-0\rSD-03863-MS\r";
+					const char german_ident[] = "3-A\r2-0\rSD-03863-MS\r";
 
-        if (cmd_handled) {
-            // ASSUMPTION: only loopback commands that were handled?
-            uart_putc(UART_KBD_ID, 0xff);
-            for (int i = 0; i < kbd_cmd_bytes; i++) {
-                uart_putc(UART_KBD_ID, (kbd_cmd >> (8 * (kbd_cmd_bytes - i - 1))) & 0xff);
-            }
-            // original MAME code did not loopback the 0x00
-            uart_putc(UART_KBD_ID, 0x00);
-        }
+					kbd_tx_str("\xff\x12\x21");
+					kbd_tx_str(english_ident);
+
+					if (kbd_mode == Mode0_Compatibility) {
+						force_mode(Mode0_Compatibility);
+					} else {
+						force_mode(Mode1_Keystate);
+					}
+
+					cmd_handled = true;
+				}
+					break;
+
+				case 0x1116: // unclear? mame sends back two mode0 forces
+					force_mode(Mode0_Compatibility);
+					force_mode(Mode0_Compatibility);
+					cmd_handled = true;
+					break;
+
+				case 0x2181: // beeper on for 300ms
+				case 0x2182: // beeper off
+					cmd_handled = true;
+					break;
+
+				case 0x1166: // unknown
+				case 0x1117: // unknown
+					dbg("Unhandled\n");
+					break;
+			}
+		}
+
+		// after mouse, sometimes the keyboard sends 0xff10045e 00000000
+
+		if (cmd_handled) {
+			kbd_reading_cmd = false;
+			kbd_cmd = 0;
+			kbd_cmd_bytes = 0;
+		}
     }
 }
 
@@ -234,8 +345,9 @@ static uint16_t s_code_table[256][StateMax] = {
 		[HID_KEY_P] = /* C11     P           */ { 0x36, 0xB6, 0x70,     0x50,   0x10,   0x50,     NOP,     No  },
 		[HID_KEY_BRACKET_LEFT] = /* C12     { [ / Ue    */ { 0x37, 0xB7, 0x7B,     0x5B,   0x1B,   0x7B,     NOP,     No  },
 		[HID_KEY_BRACKET_RIGHT] = /* C13     } ] / Oe    */ { 0x38, 0xB8, 0x7D,     0x5D,   0x1D,   0x7D,     NOP,     No  },
-		                 // /* D13     RETURN      */ { 0x52, 0xD2, 0xCB,     0xDB,   NOP,    0xCB,     NOP,     No  },
-		[HID_KEY_ENTER] = /* D13     RETURN      */ { 13, 13, 13,     13,   NOP,    13,     NOP,     No  },
+		[HID_KEY_ENTER] = /* D13     RETURN      */ { 0x52, 0xD2, 0x0D, NOP,   NOP,    0x0D,     NOP,     No  },
+		//[HID_KEY_ENTER] = /* D13     RETURN      */ { 0x52, 0xD2, 0xCB,     0xDB,   NOP,    0xCB,     NOP,     No  },
+		//[HID_KEY_ENTER] = /* D13     RETURN      */ { 13, 13, 13,     13,   NOP,    13,     NOP,     No  },
 
 		[HID_KEY_A] = /* D2      A           */ { 0x46, 0xC6, 0x61,     0x41,   0x01,   0x41,     NOP,     No  },
 		[HID_KEY_S] = /* D3      S           */ { 0x47, 0xC7, 0x73,     0x53,   0x13,   0x53,     NOP,     No  },
@@ -278,15 +390,13 @@ static uint16_t s_code_table[256][StateMax] = {
 		[HID_KEY_ARROW_DOWN] = /* LF1     Cursor down */ { 0x73, 0xF3, 0x8E,     0x9E,   0x8E,   0x8E,     0xAE,    Yes },
 
         // TODO mode1 will want us to translate modifier keys
-#if false
-		[HID_KEY_] = /* D1      CAPS LOCK   */ { NOP,  NOP,  NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
-		[HID_KEY_] = /* E1      SHIFT       */ { 0x5E, 0xDE, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
-		[HID_KEY_] = /* DO      CTRL        */ { 0x43, 0xC3, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
-// FIXME: ALT swapped!
-		[HID_KEY_] = /* ??      ALT_R       */ { 0x77, 0xF7, 0xfe00,   NOP,    NOP,    NOP,      0xfe01,  No  },
-		[HID_KEY_] = /* ??      ALT_L       */ { 0x75, 0xF5, 0xfe02,   NOP,    NOP,    NOP,      0xfe03,  No  },
-		[HID_KEY_] = /* E12     SHIFT       */ { 0x6A, 0xEA, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
-#endif
+		[HID_KEY_CAPS_LOCK] = /* D1      CAPS LOCK   */ { NOP,  NOP,  NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
+		[HID_KEY_SHIFT_LEFT] = /* E1      SHIFT       */ { 0x5E, 0xDE, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
+		[HID_KEY_CONTROL_LEFT] = /* DO      CTRL        */ { 0x43, 0xC3, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
+// FIXME: ALT swapped! (vlad: ???)
+		[HID_KEY_ALT_RIGHT] = /* ??      ALT_R       */ { 0x77, 0xF7, 0xfe00,   NOP,    NOP,    NOP,      0xfe01,  No  },
+		[HID_KEY_ALT_LEFT] = /* ??      ALT_L       */ { 0x75, 0xF5, 0xfe02,   NOP,    NOP,    NOP,      0xfe03,  No  },
+		[HID_KEY_SHIFT_RIGHT] = /* E12     SHIFT       */ { 0x6A, 0xEA, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
 
 #if false
 #if !MAP_APOLLO_KEYS

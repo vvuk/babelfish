@@ -48,15 +48,64 @@ static uint8_t const ascii_to_hid[128][2] = { HID_ASCII_TO_KEYCODE };
 void
 debug_irq_handler()
 {
+    bool in_esc = false;
+    bool in_motion = false;
+
     while (uart_is_readable(UART_DEBUG_ID)) {
         uint8_t ch = uart_getc(UART_DEBUG_ID);
+        if (ch == 0x1B) { // ESC
+            in_esc = true;
+            continue;
+        }
+        
+        if (in_esc) {
+            if (ch == '[') {
+                in_motion = true;
+                continue;
+            }
+            
+            if (in_motion) {
+                hid_mouse_report_t report = { 0 };
+                if (ch == 'A') {
+                    report.y = 1;
+                } else if (ch == 'B') {
+                    report.y = -1;
+                } else if (ch == 'C') {
+                    report.x = 1;
+                } else if (ch == 'D') {
+                    report.x = -1;
+                }
+                host->mouse_report(&report);
+                in_esc = in_motion = false;
+                continue;
+            }
+        }
+
         if (ch < 128) {
+            uint8_t keycode = ascii_to_hid[ch][1];
+            uint8_t modifier = ascii_to_hid[ch][0] ? KEYBOARD_MODIFIER_LEFTSHIFT : 0;
+
+            // ctrl-A to ctrl-Z, except for the ones that have whitespace meaning
+            if (keycode == 0 && ch > 0 && ch < 27) {
+                keycode = ascii_to_hid[ch + 96][1];
+                modifier = KEYBOARD_MODIFIER_LEFTCTRL;
+            }
+
+            if (keycode == 0)
+                continue;
+
             hid_keyboard_report_t report = {
-                .modifier = ascii_to_hid[ch][0],
-                .keycode = { ascii_to_hid[ch][1] }
+                .modifier = modifier,
+                .keycode = { keycode }
             };
+            //dbg("Sending key '%c' (0x%02x) as %d 0x%04x\n", ch, ch, report.modifier, report.keycode[0]);
             host->kbd_report(&report);
         }
+    }
+
+    if (in_esc) {
+        // if we got here without a code, move on
+        uart_putc_raw(UART_DEBUG_ID, 0x1B);
     }
 }
 
