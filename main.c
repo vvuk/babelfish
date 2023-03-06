@@ -16,6 +16,8 @@
 #define USE_SECONDARY_USB 0
 #endif
 
+#define DEBUG_TAG "main"
+
 #include "host.h"
 #include "debug.h"
 
@@ -62,7 +64,7 @@ int main(void) {
   // TODO: read hostid from storage
   host->init();
 
-  dbg("Initialized, host '%s'\n", host->name);
+  DBG("Initialized, host '%s'\n", host->name);
 
   while (true) {
     #if !USE_SECONDARY_USB

@@ -27,20 +27,28 @@ debug_init()
 }
 
 void
-dbg(const char *fmt, ...)
+dbg(const char* tag, const char *fmt, ...)
 {
     char buf[128];
     va_list args;
     va_start(args, fmt);
     vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+
     char *bp = buf;
+    uart_putc_raw(UART_DEBUG_ID, '(');
+    while (*tag) {
+        uart_putc_raw(UART_DEBUG_ID, *tag++);
+    }
+    uart_putc_raw(UART_DEBUG_ID, ')');
+    uart_putc_raw(UART_DEBUG_ID, ' ');
+
     while (*bp) {
         if (*bp == '\n') {
             uart_putc_raw(UART_DEBUG_ID, '\r');
         }
         uart_putc_raw(UART_DEBUG_ID, *bp++);
     }
-    va_end(args);
 }
 
 static uint8_t const ascii_to_hid[128][2] = { HID_ASCII_TO_KEYCODE };

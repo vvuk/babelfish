@@ -5,6 +5,7 @@
 #include <hardware/uart.h>
 #include <hardware/irq.h>
 
+#define DEBUG_TAG "apollo"
 #include "debug.h"
 
 #define UART_KBD_ID uart1
@@ -43,7 +44,7 @@ static void kbd_xmit(char c) {
 }
 
 static void force_mode(KeyboardMode mode) {
-	dbg("Setting keyboard mode to %d\n", mode);
+	DBG("Setting keyboard mode to %d\n", mode);
 	kbd_xmit(0xff);
 	kbd_xmit((char) mode);
 	kbd_mode = mode;
@@ -94,7 +95,7 @@ void apollo_kbd_report(hid_keyboard_report_t const *report) {
 		else
 			code = s_code_table[hidcode][State_Unshifted];
 			
-		dbg("Mode0: Translating %02x to %04x (%s %s)\n", hidcode, code, ctrl ? "ctrl" : "", shift ? "shift" : "");
+		//DBG("Mode0: Translating %02x to %04x (%s %s)\n", hidcode, code, ctrl ? "ctrl" : "", shift ? "shift" : "");
 		if (code != 0) {
 			kbd_xmit(code);
 		}
@@ -188,7 +189,7 @@ void apollo_mouse_report(hid_mouse_report_t const *report) {
 	if (kbd_mode == Mode0_Compatibility) {
 		// don't report mouse status in mode 0
 		// there's something about sending the same report prefixed with a 0xdf in
-		// the mame code, but I have no idea why that would be good
+		// the MAME code, but I think that would just cause garbage in MD?
 		return;
 	}
 
@@ -210,31 +211,23 @@ void on_keyboard_rx() {
     static int kbd_cmd_bytes = 0;
 	static bool first_irq = true;
 
-    bool cmd_handled;
-
     while (uart_is_readable(UART_KBD_ID)) {
         uint8_t ch = uart_getc(UART_KBD_ID);
 
-		// we seem to get a bogus irq on startup, so ignore the first char
-		if (first_irq) {
-			first_irq = false;
-			continue;
-		}
-
-		dbg("[% 8d] IN: %02x (bytes: %d cmd: %08lx reading_cmd: %d)  ", board_millis(), ch, kbd_cmd_bytes, kbd_cmd, kbd_reading_cmd);
-
         if (!kbd_reading_cmd) {
-            if (ch == 0xff) {
+			if (ch == 0x00) {
+				// ignore
+			} else if (ch == 0xff) {
                 kbd_reading_cmd = true;
                 kbd_cmd = 0;
                 kbd_cmd_bytes = 0;
             } else {
-                dbg("Unknown keyboard command start byte [not-in-cmd]: %02x\n", ch);
+                DBG("Unknown command start byte: %02x\n", ch);
 				continue;
             }
         } else {
 			if (kbd_cmd_bytes == 4) {
-				dbg("Too-long keyboard command [in-cmd]: %08lx, got %02x\n", kbd_cmd, ch);
+				DBG("Too-long keyboard command: currently %08lx, got %02x\n", kbd_cmd, ch);
 				kbd_reading_cmd = false;
 				continue;
 			}
@@ -242,7 +235,7 @@ void on_keyboard_rx() {
 			kbd_cmd_bytes++;
         }
 
-        dbg(" -- cmd (%d bytes): %08lx\n", kbd_cmd_bytes, kbd_cmd);
+        DBG(" command %08lx (%d bytes)\n", kbd_cmd, kbd_cmd_bytes);
 
         bool cmd_handled = false;
 
@@ -260,14 +253,12 @@ void on_keyboard_rx() {
 			}
 		} else if (kbd_cmd_bytes == 2) {
 			switch (kbd_cmd) {
-				case 0x1221: { // keyboard identification
-					dbg("apollo: keyboard ident request\n");
-
-					const char english_ident[] = "3-@\r2-0\rSD-03863-MS\r";
-					const char german_ident[] = "3-A\r2-0\rSD-03863-MS\r";
+				case 0x1221: // keyboard identification
+					DBG("keyboard ident request\n");
 
 					kbd_tx_str("\xff\x12\x21");
-					kbd_tx_str(english_ident);
+					kbd_tx_str("3-@\r2-0\rSD-03863-MS\r"); // english ident
+					//kbd_tx_str("3-A\r2-0\rSD-03863-MS\r"); // german ident
 
 					if (kbd_mode == Mode0_Compatibility) {
 						force_mode(Mode0_Compatibility);
@@ -276,7 +267,6 @@ void on_keyboard_rx() {
 					}
 
 					cmd_handled = true;
-				}
 					break;
 
 				case 0x1116: // unclear? mame sends back two mode0 forces
@@ -292,7 +282,13 @@ void on_keyboard_rx() {
 
 				case 0x1166: // unknown
 				case 0x1117: // unknown
-					dbg("Unhandled\n");
+					cmd_handled = true;
+					break;
+			}
+		} else if (kbd_cmd_bytes == 3) {
+			switch (kbd_cmd) {
+				case 0x10045e: // copilot thinks this is "mouse enable"?
+					cmd_handled = true;
 					break;
 			}
 		}
@@ -300,6 +296,7 @@ void on_keyboard_rx() {
 		// after mouse, sometimes the keyboard sends 0xff10045e 00000000
 
 		if (cmd_handled) {
+			DBG(" command handled\n");
 			kbd_reading_cmd = false;
 			kbd_cmd = 0;
 			kbd_cmd_bytes = 0;

@@ -11,12 +11,18 @@
 void debug_init();
 #define DEBUG_INIT() debug_init()
 
-void dbg(const char *fmt, ...);
+void dbg(const char* tag, const char *fmt, ...);
+
+#ifndef DEBUG_TAG
+#define DEBUG_TAG "??"
+#endif
+
+#define DBG(...) dbg(DEBUG_TAG, __VA_ARGS__)
 
 #else
 
 #define DEBUG_INIT() do { } while (0)
-#define dbg(...) do { } while (0)
+#define DBG(...) do { } while (0)
 
 #endif
 

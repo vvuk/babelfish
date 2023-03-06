@@ -6,6 +6,9 @@
 
 #include "host.h"
 
+#define DEBUG_TAG "apollo"
+#include "debug.h"
+
 /*
  * NOTES:
  *
@@ -123,7 +126,7 @@ void handle_command(uint8_t command_byte) {
     cmd_cmd = (command_byte >> 2) & 3;
     cmd_reg = command_byte & 3;
 
-    printf("command: addr: %d, cmd: %d, reg: %d\n", cmd_addr, cmd_cmd, cmd_reg);
+    DBG("command: addr: %d, cmd: %d, reg: %d\n", cmd_addr, cmd_cmd, cmd_reg);
     if (cmd_cmd == CMD_RESET) {
     } else if (cmd_cmd == CMD_FLUSH) {
     } else if (cmd_cmd == CMD_LISTEN) {
@@ -136,7 +139,7 @@ void handle_command(uint8_t command_byte) {
 }
 
 void handle_listen_data(uint16_t data) {
-    printf("listen data: %d\n", data);
+    DBG("listen data: %d\n", data);
 }
 
 // we're going to be generous and give ourselves 30% tolerance; we'll also
@@ -144,44 +147,44 @@ void handle_listen_data(uint16_t data) {
 
 void expect_fall_after(uint64_t cur_time, bool is_rise, uint32_t time) {
     if (gpio_get(ADB_GPIO))
-        printf("expected low, state: %d\n", in_state);
+        DBG("expected low, state: %d\n", in_state);
     if (!is_rise)
-        printf("expected fall irq, state: %d\n", in_state);
+        DBG("expected fall irq, state: %d\n", in_state);
     uint32_t min_time = time * 0.7;
     uint32_t max_time = time * 1.3;
     if (cur_time - last_rise_us < min_time || cur_time - last_rise_us > max_time)
-        printf("expected fall after %d us, got %d us, state: %d\n", time, cur_time - last_rise_us, in_state);
+        DBG("expected fall after %d us, got %d us, state: %d\n", time, cur_time - last_rise_us, in_state);
 }
 
 void expect_rise_after(uint64_t cur_time, bool is_rise, uint32_t time) {
     if (!gpio_get(ADB_GPIO))
-        printf("expected high, state: %d\n", in_state);
+        DBG("expected high, state: %d\n", in_state);
     if (is_rise)
-        printf("expected rise irq, state: %d\n", in_state);
+        DBG("expected rise irq, state: %d\n", in_state);
     uint32_t min_time = time * 0.7;
     uint32_t max_time = time * 1.3;
     if (cur_time - last_fall_us < min_time || cur_time - last_fall_us > max_time)
-        printf("expected rise after %d us, got %d us, state: %d\n", time, cur_time - last_fall_us, in_state);
+        DBG("expected rise after %d us, got %d us, state: %d\n", time, cur_time - last_fall_us, in_state);
 }
 
 void expect_fall_after_nomax(uint64_t cur_time, bool is_rise, uint32_t time) {
     if (gpio_get(ADB_GPIO))
-        printf("expected low, state: %d\n", in_state);
+        DBG("expected low, state: %d\n", in_state);
     if (!is_rise)
-        printf("expected fall irq, state: %d\n", in_state);
+        DBG("expected fall irq, state: %d\n", in_state);
     uint32_t min_time = time * 0.7;
     if (cur_time - last_rise_us < min_time)
-        printf("expected fall after %d us, got %d us, state: %d\n", time, cur_time - last_rise_us, in_state);
+        DBG("expected fall after %d us, got %d us, state: %d\n", time, cur_time - last_rise_us, in_state);
 }
 
 void expect_rise_after_nomax(uint64_t cur_time, bool is_rise, uint32_t time) {
     if (!gpio_get(ADB_GPIO))
-        printf("expected high, state: %d\n", in_state);
+        DBG("expected high, state: %d\n", in_state);
     if (is_rise)
-        printf("expected rise irq, state: %d\n", in_state);
+        DBG("expected rise irq, state: %d\n", in_state);
     uint32_t min_time = time * 0.7;
     if (cur_time - last_fall_us < min_time)
-        printf("expected rise after %d us, got %d us, state: %d\n", time, cur_time - last_fall_us, in_state);
+        DBG("expected rise after %d us, got %d us, state: %d\n", time, cur_time - last_fall_us, in_state);
 }
 
 
@@ -202,7 +205,7 @@ void adb_state_machine(uint64_t cur_time, bool is_rise, bool is_fall) {
         break;
     case Idle:
         if (gpio_get(ADB_GPIO))
-            printf("expected low, state: %d\n");
+            DBG("expected low, state: %d\n");
         if (is_fall) {
             in_state = Attention;
         }
@@ -243,7 +246,7 @@ void adb_state_machine(uint64_t cur_time, bool is_rise, bool is_fall) {
     case ListenDataLo:
         // we don't know yet whether it's a 0 or a 1
         if (!gpio_get(ADB_GPIO) || !is_rise) {
-            printf("expected high (%d) + rise irq (%d), state: %d\n", gpio_get(ADB_GPIO), is_rise, in_state);
+            DBG("expected high (%d) + rise irq (%d), state: %d\n", gpio_get(ADB_GPIO), is_rise, in_state);
             in_state = Idle;
             return;
         }
