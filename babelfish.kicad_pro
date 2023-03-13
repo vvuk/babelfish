@@ -477,40 +477,7 @@
     },
     "net_colors": null,
     "netclass_assignments": null,
-    "netclass_patterns": [
-      {
-        "netclass": "Power",
-        "pattern": "+1V1"
-      },
-      {
-        "netclass": "Power",
-        "pattern": "+3V3"
-      },
-      {
-        "netclass": "Power",
-        "pattern": "VBUS"
-      },
-      {
-        "netclass": "Power",
-        "pattern": "VCC"
-      },
-      {
-        "netclass": "USB_DIFF_87",
-        "pattern": "/USB_D+"
-      },
-      {
-        "netclass": "USB_DIFF_87",
-        "pattern": "/USB_D-"
-      },
-      {
-        "netclass": "USB_DIFF_87",
-        "pattern": "/USB_DN"
-      },
-      {
-        "netclass": "USB_DIFF_87",
-        "pattern": "/USB_DP"
-      }
-    ]
+    "netclass_patterns": []
   },
   "pcbnew": {
     "last_paths": {

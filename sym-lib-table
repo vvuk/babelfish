@@ -1,6 +1,7 @@
 (sym_lib_table
+  (version 7)
   (lib (name "MCU_RaspberryPi_RP2040")(type "KiCad")(uri "${KIPRJMOD}/MCU_RaspberryPi_RP2040.kicad_sym")(options "")(descr ""))
-  (lib (name "RP2040_minimal-rescue")(type "KiCad")(uri "${KIPRJMOD}/babelfish-rescue.kicad_sym")(options "")(descr ""))
+  (lib (name "RP2040_minimal-rescue")(type "KiCad")(uri "${KIPRJMOD}/babelfish-rescue.kicad_sym")(options " pwr_sym_only")(descr "")(disabled)(hidden))
   (lib (name "dk_Clock-Timing-Clock-Generators-PLLs-Frequency-Synthesizers")(type "KiCad")(uri "/Users/vladimir/tmp/digikey-kicad-library/digikey-symbols/dk_Clock-Timing-Clock-Generators-PLLs-Frequency-Synthesizers.kicad_sym")(options "")(descr ""))
   (lib (name "dk_Clock-Timing-Programmable-Timers-and-Oscillators")(type "KiCad")(uri "/Users/vladimir/tmp/digikey-kicad-library/digikey-symbols/dk_Clock-Timing-Programmable-Timers-and-Oscillators.kicad_sym")(options "")(descr ""))
   (lib (name "dk_Clock-Timing-Real-Time-Clocks")(type "KiCad")(uri "/Users/vladimir/tmp/digikey-kicad-library/digikey-symbols/dk_Clock-Timing-Real-Time-Clocks.kicad_sym")(options "")(descr ""))
@@ -22,4 +23,5 @@
   (lib (name "dk_Logic-Signal-Switches-Multiplexers-Decoders")(type "KiCad")(uri "/Users/vladimir/tmp/digikey-kicad-library/digikey-symbols/dk_Logic-Signal-Switches-Multiplexers-Decoders.kicad_sym")(options "")(descr ""))
   (lib (name "dk_Logic-Translators-Level-Shifters")(type "KiCad")(uri "/Users/vladimir/tmp/digikey-kicad-library/digikey-symbols/dk_Logic-Translators-Level-Shifters.kicad_sym")(options "")(descr ""))
   (lib (name "dk_Rectangular-Connectors-Headers-Male-Pins")(type "KiCad")(uri "/Users/vladimir/tmp/digikey-kicad-library/digikey-symbols/dk_Rectangular-Connectors-Headers-Male-Pins.kicad_sym")(options "")(descr ""))
+  (lib (name "Connector_Generic")(type "KiCad")(uri "${KIPRJMOD}/Connector_Generic.kicad_sym")(options "")(descr ""))
 )

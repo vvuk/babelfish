@@ -401,8 +401,8 @@
   (pad "2" thru_hole circle (at -1 -1.355 180) (size 1.5 1.5) (drill 0.9) (layers "*.Cu" "*.Paste" "*.Mask") (tstamp 7c21136f-ed20-44e0-9ceb-0dbaf902bfb8))
   (pad "3" thru_hole circle (at 1 -1.355) (size 1.5 1.5) (drill 0.9) (layers "*.Cu" "*.Paste" "*.Mask") (tstamp 700a2c0a-b876-4a5d-8048-cfa4035aefc4))
   (pad "4" thru_hole circle (at 3.5 -1.355) (size 1.5 1.5) (drill 0.9) (layers "*.Cu" "*.Paste" "*.Mask") (tstamp d120b725-1506-4379-b264-2f43846cec3e))
-  (pad "SH1" thru_hole circle (at 7 1.355) (size 3.1 3.1) (drill 2.1) (layers "*.Cu" "*.Paste" "*.Mask") (tstamp d3036f39-f868-42cb-a68b-263377610fd4))
-  (pad "SH2" thru_hole circle (at -7 1.355) (size 3.1 3.1) (drill 2.1) (layers "*.Cu" "*.Paste" "*.Mask") (tstamp a36155ea-6c41-4cc9-a252-5827d383ba1b))
+  (pad "5" thru_hole circle (at -7 1.355) (size 3.1 3.1) (drill 2.1) (layers "*.Cu" "*.Paste" "*.Mask") (tstamp a36155ea-6c41-4cc9-a252-5827d383ba1b))
+  (pad "5" thru_hole circle (at 7 1.355) (size 3.1 3.1) (drill 2.1) (layers "*.Cu" "*.Paste" "*.Mask") (tstamp d3036f39-f868-42cb-a68b-263377610fd4))
   (model "${EASY_EDA_3D}/foo.3dshapes/USB-A-TH__USB-AF-90.wrl"
     (offset (xyz 0 0 0))
     (scale (xyz 0.3937007874 0.3937007874 0.3937007874))
