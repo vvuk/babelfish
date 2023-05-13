@@ -56,7 +56,12 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        "hole_clearance|107680061|76080099|f99afe73-0e98-440b-a1e0-857fb445669e|696f04fe-16d7-41d4-afe4-6f18589d8eb4",
+        "hole_clearance|107879909|76080099|292e86de-8747-4e29-b832-c824b3cca6aa|696f04fe-16d7-41d4-afe4-6f18589d8eb4",
+        "hole_clearance|113280010|76080099|811e2798-9bcf-4467-8240-bc3cb37bfe7c|d9638403-2a28-498b-bc12-7c9b312992c9",
+        "hole_clearance|113479883|76080099|bebc2382-5b43-4305-b077-79736def9580|d9638403-2a28-498b-bc12-7c9b312992c9"
+      ],
       "meta": {
         "filename": "board_design_settings.json",
         "version": 2
@@ -175,8 +180,10 @@
       ],
       "track_widths": [
         0.0,
+        0.0,
         0.15,
         0.2,
+        0.254,
         0.3,
         0.4,
         0.6,
