@@ -2,31 +2,32 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Pico Debug",
-            "cwd": "${workspaceRoot}",
-            "executable": "${command:cmake.launchTargetPath}",
-            "request": "launch",
+            "name": "Babelfish Test",
             "type": "cortex-debug",
-            "servertype": "openocd",
-            // This may need to be "arm-none-eabi-gdb" for some previous builds
-            "gdbPath" : "arm-none-eabi-gdb",
-            "device": "RP2040",
-            "searchDir": [
-                "${workspaceRoot}",
-                "/opt/UnitySrc/proj/openocd-rp2040/tcl"
-            ],
-            "configFiles": [
-                "interface/cmsis-dap.cfg",
-                "target/rp2040.cfg"
-            ],
-            //"svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
+            "request": "launch",
+            "cwd": "${workspaceRoot}",
+            "executable": "build/babelfish_test.elf",
             "svdFile": "/opt/UnitySrc/proj/pico-sdk/src/rp2040/hardware_regs/rp2040.svd",
+            //"servertype": "openocd",
+            "servertype": "bmp",
+            "BMPGDBSerialPort": "192.168.7.108:2345",
+            "gdbPath" : "arm-none-eabi-gdb",
+            "interface": "swd",
+            "device": "RP2040",
+            "targetId": "1",
+            "showDevDebugOutput": "none",
+            //"configFiles": [
+                //"openocd.cfg",
+                //"interface/cmsis-dap.cfg",
+                //"target/rp2040.cfg"
+            //],
+            //"svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
             "runToEntryPoint": "main",
             // Work around for stopping at main on restart
-            "postRestartCommands": [
-                "break main",
-                "continue"
-            ]
+            //"postRestartCommands": [
+            //    "break main",
+            //    "continue"
+            //]
         }
     ]
 }

@@ -42,8 +42,15 @@ void core1_main(void);
 
 int main(void) {
   // need 120MHz for USB
-  set_sys_clock_khz(120000, true);
+  //set_sys_clock_khz(120000, true);
 
+  stdio_init_all();
+  printf("Hello world");
+  while (true) {
+    sleep_ms(1000);
+    printf("Hello world");
+  }
+#if false
   sleep_ms(10);
 
   DEBUG_INIT();
@@ -74,6 +81,7 @@ int main(void) {
 
     host->update();
   }
+#endif
 
   return 0;
 }
