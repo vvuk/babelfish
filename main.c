@@ -36,6 +36,8 @@ static HostDevice hosts[] = {
 static int g_current_host_index = 2;
 
 HostDevice *host = NULL;
+KeyboardEvent static_kbd_events[NUM_STATIC_EVENTS];
+MouseEvent static_mouse_events[NUM_STATIC_EVENTS];
 
 void led_blinking_task(void);
 void core1_main(void);

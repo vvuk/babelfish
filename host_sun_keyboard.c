@@ -4,7 +4,7 @@
 #include <hardware/uart.h>
 #include <hardware/irq.h>
 
-#include "sun_keycodes.h"
+#include "host_sun_keycodes.h"
 
 #define UART_KBD_ID uart1
 #define UART_KBD_IRQ UART1_IRQ

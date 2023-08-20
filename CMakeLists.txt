@@ -17,12 +17,13 @@ pico_sdk_init()
 
 add_executable(usb2multi
   main.c
+  bootmode.c
   hid_app.c
-  sun.c
-  sun_mouse.c
-  sun_keyboard.c
-  adb.c
-  apollo.c
+  host_sun.c
+  host_sun_mouse.c
+  host_sun_keyboard.c
+  host_adb.c
+  host_apollo.c
   debug.c
 )
 target_include_directories(usb2multi PUBLIC
