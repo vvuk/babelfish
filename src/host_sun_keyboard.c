@@ -7,38 +7,31 @@
 #include "host_sun_keycodes.h"
 #include "host.h"
 
-#define UART_KBD_ID uart1
-#define UART_KBD_IRQ UART1_IRQ
-#define UART_KBD_TX_PIN 4
-#define UART_KBD_RX_PIN 5
-
 static void on_keyboard_rx();
 
 void sun_keyboard_uart_init() {
-  uart_init(UART_KBD_ID, 1200);
-  gpio_set_function(UART_KBD_TX_PIN, GPIO_FUNC_UART);
-  gpio_set_function(UART_KBD_RX_PIN, GPIO_FUNC_UART);
-  uart_set_hw_flow(UART_KBD_ID, false, false);
-  uart_set_format(UART_KBD_ID, 8, 1, UART_PARITY_NONE);
-  irq_set_exclusive_handler(UART_KBD_IRQ, on_keyboard_rx);
-  irq_set_enabled(UART_KBD_IRQ, true);
-  uart_set_irq_enables(UART_KBD_ID, true, false);
-  gpio_set_inover(UART_KBD_RX_PIN, GPIO_OVERRIDE_INVERT);
-  gpio_set_outover(UART_KBD_TX_PIN, GPIO_OVERRIDE_INVERT);
+  uart_init(out_uart.uart, 1200);
+  uart_set_hw_flow(out_uart.uart, false, false);
+  uart_set_format(out_uart.uart, 8, 1, UART_PARITY_NONE);
+  irq_set_exclusive_handler(out_uart.uart_irq, on_keyboard_rx);
+  irq_set_enabled(out_uart.uart_irq, true);
+  uart_set_irq_enables(out_uart.uart, true, false);
+  gpio_set_inover(out_uart.uart_rx_gpio, GPIO_OVERRIDE_INVERT);
+  gpio_set_outover(out_uart.uart_tx_gpio, GPIO_OVERRIDE_INVERT);
 }
 
 // RX interrupt handler
 void on_keyboard_rx() {
-    while (uart_is_readable(UART_KBD_ID)) {
+    while (uart_is_readable(out_uart.uart)) {
         // printf("System command: ");
-        uint8_t ch = uart_getc(UART_KBD_ID);
+        uint8_t ch = uart_getc(out_uart.uart);
 
         switch (ch) {
           case 0x01: // reset
             // printf("Reset\n");
-            uart_putc_raw(UART_KBD_ID, 0xff);
-            uart_putc_raw(UART_KBD_ID, 0x04);
-            uart_putc_raw(UART_KBD_ID, 0x7f);
+            uart_putc_raw(out_uart.uart, 0xff);
+            uart_putc_raw(out_uart.uart, 0x04);
+            uart_putc_raw(out_uart.uart, 0x7f);
             break;
           case 0x02: // bell on
             // printf("Bell on\n");
@@ -55,13 +48,13 @@ void on_keyboard_rx() {
           case 0x0e: // led command
             // printf("Led\n");
             {
-              uint8_t led = uart_getc(UART_KBD_ID);
+              uint8_t led = uart_getc(out_uart.uart);
             }
             break;
           case 0x0f: // layout command
             // printf("Layout\n");
-            uart_putc_raw(UART_KBD_ID, 0xfe);
-            uart_putc_raw(UART_KBD_ID, 0x00);
+            uart_putc_raw(out_uart.uart, 0xfe);
+            uart_putc_raw(out_uart.uart, 0x00);
             break;
           default:
             // printf("Unknown system command: 0x%02x\n", ch);
@@ -92,7 +85,7 @@ void sun_kbd_event(KeyboardEvent* events, uint16_t count) {
       keys_down--;
     }
 
-#define SEND_SUN_KEY(suncode, down) uart_putc_raw(UART_KBD_ID, down ? (suncode) : ((suncode) | 0x80))
+#define SEND_SUN_KEY(suncode, down) uart_putc_raw(out_uart.uart, down ? (suncode) : ((suncode) | 0x80))
 
     if (gui) {
       switch (event.keycode) {
@@ -116,7 +109,7 @@ void sun_kbd_event(KeyboardEvent* events, uint16_t count) {
     }
 
     if (keys_down == 0) {
-      uart_putc_raw(UART_KBD_ID, 0x7f);
+      uart_putc_raw(out_uart.uart, 0x7f);
     }
   }
 }

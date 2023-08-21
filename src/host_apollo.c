@@ -11,11 +11,6 @@
 #define DEBUG_TAG "apollo"
 #include "debug.h"
 
-#define UART_KBD_ID uart1
-#define UART_KBD_IRQ UART1_IRQ
-#define UART_KBD_TX_PIN 4
-#define UART_KBD_RX_PIN 5
-
 typedef enum {
     Mode0_Compatibility = 0,
     Mode1_Keystate = 1,
@@ -43,7 +38,7 @@ static void on_keyboard_rx();
 static uint16_t s_code_table[2][256][StateMax];
 
 static void kbd_xmit(char c) {
-	uart_putc_raw(UART_KBD_ID, c);
+	uart_putc_raw(out_uart.uart, c);
 }
 
 static void force_mode(KeyboardMode mode) {
@@ -60,17 +55,14 @@ static void set_mode(KeyboardMode mode) {
 }
 
 void apollo_init() {
-  gpio_set_function(UART_KBD_TX_PIN, GPIO_FUNC_UART);
-  gpio_set_function(UART_KBD_RX_PIN, GPIO_FUNC_UART);
+  uart_init(out_uart.uart, 1200);
+  uart_set_hw_flow(out_uart.uart, false, false);
+  uart_set_format(out_uart.uart, 8, 1, UART_PARITY_EVEN);
 
-  uart_init(UART_KBD_ID, 1200);
-  uart_set_hw_flow(UART_KBD_ID, false, false);
-  uart_set_format(UART_KBD_ID, 8, 1, UART_PARITY_EVEN);
+  irq_set_exclusive_handler(out_uart.uart_irq, on_keyboard_rx);
+  irq_set_enabled(out_uart.uart_irq, true);
 
-  irq_set_exclusive_handler(UART_KBD_IRQ, on_keyboard_rx);
-  irq_set_enabled(UART_KBD_IRQ, true);
-
-  uart_set_irq_enables(UART_KBD_ID, true, false);
+  uart_set_irq_enables(out_uart.uart, true, false);
 }
 
 void apollo_update() {
@@ -170,8 +162,8 @@ void on_keyboard_rx() {
     static int kbd_cmd_bytes = 0;
 	static bool first_irq = true;
 
-    while (uart_is_readable(UART_KBD_ID)) {
-        uint8_t ch = uart_getc(UART_KBD_ID);
+    while (uart_is_readable(out_uart.uart)) {
+        uint8_t ch = uart_getc(out_uart.uart);
 
         if (!kbd_reading_cmd) {
 			if (ch == 0x00) {
