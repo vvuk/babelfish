@@ -51,11 +51,11 @@
 #define HID_KEY_NONUS_NUMBER_SIGN_TILDE            0x32
 #define HID_KEY_SEMICOLON_COLON                    0x33
 #define HID_KEY_SINGLE_AND_DOUBLE_QUOTE            0x34
-#define HID_KEY_GRAVE ACCENT AND TILDE             0x35
+#define HID_KEY_GRAVE_ACCENT_AND_TILDE             0x35
 #define HID_KEY_COMMA_AND_LESS                     0x36
 #define HID_KEY_DOT_GREATER                        0x37
 #define HID_KEY_SLASH_QUESTION                     0x38
-#define HID_KEY_CAPS LOCK                          0x39
+#define HID_KEY_CAPS_LOCK                          0x39
 #define HID_KEY_F1                                 0x3A
 #define HID_KEY_F2                                 0x3B
 #define HID_KEY_F3                                 0x3C
@@ -69,7 +69,7 @@
 #define HID_KEY_F11                                0x44
 #define HID_KEY_F12                                0x45
 #define HID_KEY_PRINTSCREEN                        0x46
-#define HID_KEY_SCROLL LOCK                        0x47
+#define HID_KEY_SCROLL_LOCK                        0x47
 #define HID_KEY_PAUSE                              0x48
 #define HID_KEY_INSERT                             0x49
 #define HID_KEY_HOME                               0x4A
@@ -83,7 +83,7 @@
 #define HID_KEY_UPARROW                            0x52
 #define HID_KEY_KEYPAD_NUM_LOCK_AND_CLEAR          0x53
 #define HID_KEY_KEYPAD_SLASH                       0x54
-#define HID_KEY_KEYPAD_ASTERIKS                    0x55
+#define HID_KEY_KEYPAD_ASTERISK                    0x55
 #define HID_KEY_KEYPAD_MINUS                       0x56
 #define HID_KEY_KEYPAD_PLUS                        0x57
 #define HID_KEY_KEYPAD_ENTER                       0x58
@@ -97,7 +97,7 @@
 #define HID_KEY_KEYPAD_8_UP_ARROW                  0x60
 #define HID_KEY_KEYPAD_9_PAGEUP                    0x61
 #define HID_KEY_KEYPAD_0_INSERT                    0x62
-#define HID_KEY_KEYPAD_DECIMAL_SEPARATOR_DELETE    0x63
+#define HID_KEY_KEYPAD_DECIMAL                     0x63
 #define HID_KEY_NONUS_BACK_SLASH_VERTICAL_BAR      0x64
 #define HID_KEY_APPLICATION                        0x65
 #define HID_KEY_POWER                              0x66
@@ -173,6 +173,7 @@
 #define HID_KEY_KEYPAD_CPARENTHESIS                0xB7
 #define HID_KEY_KEYPAD_OBRACE                      0xB8
 #define HID_KEY_KEYPAD_CBRACE                      0xB9
+#if false
 #define HID_KEY_KEYPAD_TAB                         0xBA
 #define HID_KEY_KEYPAD_BACKSPACE                   0xBB
 #define HID_KEY_KEYPAD_A                           0xBC
@@ -209,11 +210,12 @@
 #define HID_KEY_KEYPAD_OCTAL                       0xDB
 #define HID_KEY_KEYPAD_DECIMAL                     0xDC
 #define HID_KEY_KEYPAD_HEXADECIMAL                 0xDD
-#define HID_KEY_LEFT_CONTROL                        0xE0
-#define HID_KEY_LEFT_SHIFT                          0xE1
-#define HID_KEY_LEFT_ALT                            0xE2
+#endif
+#define HID_KEY_LEFT_CONTROL                       0xE0
+#define HID_KEY_LEFT_SHIFT                         0xE1
+#define HID_KEY_LEFT_ALT                           0xE2
 #define HID_KEY_LEFT_GUI                           0xE3
-#define HID_KEY_RIGHT_CONTROL                       0xE4
-#define HID_KEY_RIGHT_SHIFT                         0xE5
-#define HID_KEY_RIGHT_ALT                           0xE6
+#define HID_KEY_RIGHT_CONTROL                      0xE4
+#define HID_KEY_RIGHT_SHIFT                        0xE5
+#define HID_KEY_RIGHT_ALT                          0xE6
 #define HID_KEY_RIGHT_GUI                          0xE7

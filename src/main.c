@@ -9,8 +9,7 @@
 #include <pico/stdlib.h>
 #include <bsp/board.h>
 #include <tusb.h>
-//#include <pio_usb.h>
-#include "external/pico-pio-usb/src/pio_usb.h"
+#include <pio_usb.h>
 
 #if !defined(USE_SECONDARY_USB)
 #define USE_SECONDARY_USB 0
@@ -20,6 +19,7 @@
 
 #include "host.h"
 #include "debug.h"
+#include "babelfish.h"
 
 HOST_PROTOTYPES(sun);
 HOST_PROTOTYPES(adb);
@@ -44,15 +44,9 @@ void core1_main(void);
 
 int main(void) {
   // need 120MHz for USB
-  //set_sys_clock_khz(120000, true);
+  set_sys_clock_khz(120000, true);
 
   stdio_init_all();
-  printf("Hello world");
-  while (true) {
-    sleep_ms(1000);
-    printf("Hello world");
-  }
-#if false
   sleep_ms(10);
 
   DEBUG_INIT();
@@ -60,9 +54,9 @@ int main(void) {
 #if USE_SECONDARY_USB
   // Initialize Core 1, and put PIO-USB on it with TinyUSB
   multicore_reset_core1();
-  multicore_launch_core1(core1_main);
-
   board_init();
+
+  multicore_launch_core1(core1_main);
 #else
   board_init();
   tusb_init();
@@ -83,7 +77,6 @@ int main(void) {
 
     host->update();
   }
-#endif
 
   return 0;
 }
@@ -107,7 +100,7 @@ void led_blinking_task(void)
 }
 
 //
-// Core 1
+// Core 1 -- secondary USB port
 //
 void core1_main(void) {
   sleep_ms(10);
@@ -115,6 +108,9 @@ void core1_main(void) {
   // Use tuh_configure() to pass pio configuration to the host stack
   // Note: tuh_configure() must be called before
   pio_usb_configuration_t pio_cfg = PIO_USB_DEFAULT_CONFIG;
+  pio_cfg.pinout = PIO_USB_PINOUT_DMDP;
+  pio_cfg.pin_dp = USB_AUX_DP_GPIO;
+
   tuh_configure(1, TUH_CFGID_RPI_PIO_USB_CONFIGURATION, &pio_cfg);
 
   // To run USB SOF interrupt in core1, init host stack for pio_usb (roothub
@@ -126,13 +122,12 @@ void core1_main(void) {
   }
 }
 
-
 void tusb_on_kbd_report(const hid_keyboard_report_t* report)
 {
-  host->kbd_report( (hid_keyboard_report_t const*) report );
+  translate_boot_kbd_report(report, host);
 }
 
 void tusb_on_mouse_report(const hid_mouse_report_t* report)
 {
-  host->mouse_report( (hid_mouse_report_t const*) report );
+  translate_boot_mouse_report(report, host);
 }

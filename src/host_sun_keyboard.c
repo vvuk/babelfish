@@ -5,6 +5,7 @@
 #include <hardware/irq.h>
 
 #include "host_sun_keycodes.h"
+#include "host.h"
 
 #define UART_KBD_ID uart1
 #define UART_KBD_IRQ UART1_IRQ
@@ -69,83 +70,53 @@ void on_keyboard_rx() {
     }
 }
 
-static uint8_t hotkey_combo = KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_LEFTCTRL;
-static uint8_t active_key_list[128];
-static uint8_t active_keys = 0;
+void sun_kbd_event(KeyboardEvent* events, uint16_t count) {
+  // if the gui/sun-extra-keys modifier is pressed
+  static bool gui = false;
+  static uint32_t keys_down = 0;
 
-void sun_kbd_report(hid_keyboard_report_t const *report) {
-  uint8_t current_key_list[128];
-  memset(current_key_list, 0, sizeof(current_key_list));
+  for (uint16_t i = 0; i < count; ++i) {
+    KeyboardEvent event = events[i];
 
-  if (report->modifier != 0) {
-    current_key_list[usb2sun[HID_KEY_LEFT_SHIFT]]    = report->modifier & KEYBOARD_MODIFIER_LEFTSHIFT  ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_LEFT_CONTROL]]  = report->modifier & KEYBOARD_MODIFIER_LEFTCTRL   ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_LEFT_ALT]]      = report->modifier & KEYBOARD_MODIFIER_LEFTALT    ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_GUI_LEFT]]      = report->modifier & KEYBOARD_MODIFIER_LEFTGUI    ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_RIGHT_SHIFT]]   = report->modifier & KEYBOARD_MODIFIER_RIGHTSHIFT ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_RIGHT_CONTROL]] = report->modifier & KEYBOARD_MODIFIER_RIGHTCTRL  ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_RIGHT_ALT]]     = report->modifier & KEYBOARD_MODIFIER_RIGHTALT   ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_GUI_RIGHT]]     = report->modifier & KEYBOARD_MODIFIER_RIGHTGUI   ? 1 : 0;
-  }
+    if (event.page != 0)
+      continue;
 
-  uint8_t i = 0;
-  if (report->modifier == hotkey_combo) {
-    current_key_list[usb2sun[HID_KEY_LEFT_SHIFT]] = 0;
-    current_key_list[usb2sun[HID_KEY_LEFT_CONTROL]] = 0;
-    switch (report->keycode[i]) {
-      case HID_KEY_F1:
-        current_key_list[SUN_KEY_STOP] = 1;
-        break;
-      case HID_KEY_F2:
-        current_key_list[SUN_KEY_AGAIN] = 1;
-        break;
-      case HID_KEY_1:
-        current_key_list[SUN_KEY_PROPS] = 1;
-        break;
-      case HID_KEY_2:
-        current_key_list[SUN_KEY_UNDO] = 1;
-        break;
-      case HID_KEY_Q:
-        current_key_list[SUN_KEY_FRONT] = 1;
-        break;
-      case HID_KEY_W:
-        current_key_list[SUN_KEY_COPY] = 1;
-        break;
-      case HID_KEY_A:
-        current_key_list[SUN_KEY_OPEN] = 1;
-        break;
-      case HID_KEY_S:
-        current_key_list[SUN_KEY_PASTE] = 1;
-        break;
-      case HID_KEY_Z:
-        current_key_list[SUN_KEY_FIND] = 1;
-        break;
-      case HID_KEY_X:
-        current_key_list[SUN_KEY_CUT] = 1;
-        break;
+    if (EVENT_IS_HOST_MOD(event)) {
+      gui = event.down;
+      continue;
     }
-    i++;
-  }
-  for (; i < 6; i++) {
-    if (report->keycode[i]) {
-      current_key_list[usb2sun[report->keycode[i]]] = 1;
-    }
-  }
 
-  for (uint8_t i = 0; i < 128; i++) {
-    if (active_key_list[i] && !current_key_list[i]) {
-      uart_putc_raw(UART_KBD_ID, i | 0x80);
-      active_key_list[i] = 0;
-      active_keys--;
+    if (event.down) {
+      keys_down++;
+    } else {
+      keys_down--;
     }
-    if (!active_key_list[i] && current_key_list[i]) {
-      uart_putc_raw(UART_KBD_ID, i);
-      active_key_list[i] = 1;
-      active_keys++;
-    }
-  }
 
-  if (active_keys == 0) {
-    uart_putc_raw(UART_KBD_ID, 0x7f);
+#define SEND_SUN_KEY(suncode, down) uart_putc_raw(UART_KBD_ID, down ? (suncode) : ((suncode) | 0x80))
+
+    if (gui) {
+      switch (event.keycode) {
+        case HID_KEY_F1: SEND_SUN_KEY(SUN_KEY_STOP, event.down); break;
+        case HID_KEY_F2: SEND_SUN_KEY(SUN_KEY_AGAIN, event.down); break;
+        case HID_KEY_1: SEND_SUN_KEY(SUN_KEY_PROPS, event.down); break;
+        case HID_KEY_2: SEND_SUN_KEY(SUN_KEY_UNDO, event.down); break;
+        case HID_KEY_Q: SEND_SUN_KEY(SUN_KEY_FRONT, event.down); break;
+        case HID_KEY_W: SEND_SUN_KEY(SUN_KEY_COPY, event.down); break;
+        case HID_KEY_A: SEND_SUN_KEY(SUN_KEY_OPEN, event.down); break;
+        case HID_KEY_S: SEND_SUN_KEY(SUN_KEY_PASTE, event.down); break;
+        case HID_KEY_Z: SEND_SUN_KEY(SUN_KEY_FIND, event.down); break;
+        case HID_KEY_X: SEND_SUN_KEY(SUN_KEY_CUT, event.down); break;
+      }
+
+      continue;
+    }
+
+    if (usb2sun[event.keycode] != 0) {
+      SEND_SUN_KEY(usb2sun[event.keycode], event.down);
+    }
+
+    if (keys_down == 0) {
+      uart_putc_raw(UART_KBD_ID, 0x7f);
+    }
   }
 }

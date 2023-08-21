@@ -83,7 +83,7 @@ debug_irq_handler()
                 } else if (ch == 'D') {
                     report.x = -1;
                 }
-                host->mouse_report(&report);
+                //host->mouse_event(&report);
                 in_esc = in_motion = false;
                 continue;
             }
@@ -107,7 +107,7 @@ debug_irq_handler()
                 .keycode = { keycode }
             };
             //dbg("Sending key '%c' (0x%02x) as %d 0x%04x\n", ch, ch, report.modifier, report.keycode[0]);
-            host->kbd_report(&report);
+            //host->kbd_report(&report);
         }
     }
 

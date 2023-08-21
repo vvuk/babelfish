@@ -1,6 +1,5 @@
 #include <pico/stdlib.h>
 #include <pico/multicore.h>
-#include <pico/stdio_semihosting.h>
 #include <bsp/board.h>
 #include <tusb.h>
 #include <stdarg.h>
@@ -233,8 +232,8 @@ int main(void) {
   // need 120MHz for USB
   set_sys_clock_khz(120000, true);
 
-  //stdio_init_all();
-  stdio_semihosting_init();
+  stdio_init_all();
+  //stdio_semihosting_init();
 
   //sleep_ms(10);
 

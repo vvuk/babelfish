@@ -1,4 +1,4 @@
-#ifdef BABLEFISH_H_
+#ifndef BABLEFISH_H_
 #define BABELFISH_H_
 
 #define U0_TX_A_GPIO 0

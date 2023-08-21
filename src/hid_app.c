@@ -181,16 +181,17 @@ static void process_generic_report(uint8_t dev_addr, uint8_t instance, uint8_t c
       case HID_USAGE_DESKTOP_KEYBOARD:
         // TU_LOG1("HID receive keyboard report\r\n");
         // Assume keyboard follow boot report layout
-        host->kbd_report( (hid_keyboard_report_t const*) report );
-      break;
+        translate_boot_kbd_report(report, host);
+        break;
 
       case HID_USAGE_DESKTOP_MOUSE:
         // TU_LOG1("HID receive mouse report\r\n");
         // Assume mouse follow boot report layout
-        host->mouse_report( (hid_mouse_report_t const*) report );
-      break;
+        translate_boot_mouse_report(report, host);
+        break;
 
-      default: break;
+      default:
+        break;
     }
   }
 }

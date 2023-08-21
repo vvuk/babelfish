@@ -42,6 +42,8 @@ typedef struct {
     void (*mouse_event)(const MouseEvent* events, uint8_t count);
 } HostDevice;
 
+#define EVENT_IS_HOST_MOD(event) (event.keycode == HID_KEY_LEFT_GUI || event.keycode == HID_KEY_RIGHT_GUI || event.keycode == HID_KEY_RIGHT_ALT)
+
 #define NUM_STATIC_EVENTS 16
 
 extern HostDevice *host;
@@ -62,5 +64,8 @@ extern void NAME##_mouse_event(const MouseEvent* events, uint8_t count);
     NAME##_kbd_event, \
     NAME##_mouse_event \
 }
+
+void translate_boot_kbd_report(hid_keyboard_report_t const *report, HostDevice* host);
+void translate_boot_mouse_report(hid_mouse_report_t const *report, HostDevice* host);
 
 #endif

@@ -4,6 +4,8 @@
 #include <pico/stdlib.h>
 #include <hardware/uart.h>
 
+#include "host.h"
+
 static bool serial_data_in_tail = false;
 static bool updated = false;
 static int32_t delta_x = 0;
@@ -65,14 +67,18 @@ void sun_mouse_tx() {
   }
 }
 
-void sun_mouse_report(hid_mouse_report_t const * report) {
-  btns = ((report->buttons & MOUSE_BUTTON_LEFT)   ? 0 : 4)
-       | ((report->buttons & MOUSE_BUTTON_MIDDLE) ? 0 : 2)
-       | ((report->buttons & MOUSE_BUTTON_RIGHT)  ? 0 : 1)
-  ;
-  delta_x += report->x;
-  delta_y += -report->y;
-  delta_x = clamp(delta_x, -127, 127);
-  delta_y = clamp(delta_y, -127, 127);
-  updated = true;
+void sun_mouse_event(MouseEvent* events, uint16_t count) {
+  for (uint16_t i = 0; i < count; ++i) {
+    MouseEvent event = events[i];
+
+    btns = ((event.buttons_current & MOUSE_BUTTON_LEFT)   ? 0 : 4)
+        | ((event.buttons_current & MOUSE_BUTTON_MIDDLE) ? 0 : 2)
+        | ((event.buttons_current & MOUSE_BUTTON_RIGHT)  ? 0 : 1)
+    ;
+    delta_x += event.dx;
+    delta_y += -event.dy;
+    delta_x = clamp(delta_x, -127, 127);
+    delta_y = clamp(delta_y, -127, 127);
+    updated = true;
+  }
 }

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.5)
 set(PICO_SDK_PATH "/opt/UnitySrc/proj/pico-sdk")
 set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
 
@@ -27,7 +27,7 @@ add_executable(usb2multi
   src/debug.c
 )
 target_include_directories(usb2multi PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR})
+  ${CMAKE_CURRENT_LIST_DIR}/src)
 target_link_libraries(usb2multi PUBLIC
   pico_stdlib
   pico_multicore
@@ -49,20 +49,17 @@ pico_enable_stdio_uart(usb2multi 0)
 pico_add_extra_outputs(usb2multi)
 
 add_executable(babelfish_test
-  babelfish_test.c
-  ${PICO_TINYUSB_PATH}/src/portable/raspberrypi/pio_usb/hcd_pio_usb.c
+  src/babelfish_test.c
 )
 
 target_include_directories(babelfish_test PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR})
+  ${CMAKE_CURRENT_LIST_DIR}/src)
 target_link_libraries(babelfish_test PUBLIC
   pico_stdlib
   pico_multicore
   pico_stdio
-  pico_stdio_semihosting
-  tinyusb_board
-  tinyusb_host_base
   tinyusb_host
+  tinyusb_board
   tinyusb_pico_pio_usb)
 target_compile_definitions(babelfish_test PRIVATE
   DEBUG

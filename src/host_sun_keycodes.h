@@ -11,7 +11,7 @@
 #define _KEYCODES_H_
 
 #include <stdint.h>
-#include "tusb.h"
+#include "hid_codes.h"
 
 static const uint8_t usb2sun[256] = {
   [HID_KEY_HELP] = 0x76,
@@ -28,7 +28,7 @@ static const uint8_t usb2sun[256] = {
   [HID_KEY_F10] = 0x07,
   [HID_KEY_F11] = 0x09,
   [HID_KEY_F12] = 0x0b,
-  [HID_KEY_PRINT_SCREEN] = 0x16,
+  [HID_KEY_PRINTSCREEN] = 0x16,
   [HID_KEY_SCROLL_LOCK] = 0x17,
   [HID_KEY_PAUSE] = 0x15,
   [HID_KEY_MUTE] = 0x2d,
@@ -36,19 +36,19 @@ static const uint8_t usb2sun[256] = {
   [HID_KEY_VOLUME_UP] = 0x4,
   [HID_KEY_POWER] = 0x30,
 
-  [HID_KEY_GRAVE] = 0x2a,
-  [HID_KEY_1] = 0x1e,
-  [HID_KEY_2] = 0x1f,
-  [HID_KEY_3] = 0x20,
-  [HID_KEY_4] = 0x21,
-  [HID_KEY_5] = 0x22,
-  [HID_KEY_6] = 0x23,
-  [HID_KEY_7] = 0x24,
-  [HID_KEY_8] = 0x25,
-  [HID_KEY_9] = 0x26,
-  [HID_KEY_0] = 0x27,
-  [HID_KEY_MINUS] = 0x28,
-  [HID_KEY_EQUAL] = 0x29,
+  [HID_KEY_GRAVE_ACCENT_AND_TILDE] = 0x2a,
+  [HID_KEY_1_EXCLAMATION_MARK] = 0x1e,
+  [HID_KEY_2_AT] = 0x1f,
+  [HID_KEY_3_NUMBER_SIGN] = 0x20,
+  [HID_KEY_4_DOLLAR] = 0x21,
+  [HID_KEY_5_PERCENT] = 0x22,
+  [HID_KEY_6_CARET] = 0x23,
+  [HID_KEY_7_AMPERSAND] = 0x24,
+  [HID_KEY_8_ASTERISK] = 0x25,
+  [HID_KEY_9_OPARENTHESIS] = 0x26,
+  [HID_KEY_0_CPARENTHESIS] = 0x27,
+  [HID_KEY_MINUS_UNDERSCORE] = 0x28,
+  [HID_KEY_EQUAL_PLUS] = 0x29,
   [HID_KEY_BACKSPACE] = 0x2b,
 
   [HID_KEY_TAB] = 0x35,
@@ -62,9 +62,9 @@ static const uint8_t usb2sun[256] = {
   [HID_KEY_I] = 0x3d,
   [HID_KEY_O] = 0x3e,
   [HID_KEY_P] = 0x3f,
-  [HID_KEY_BRACKET_LEFT] = 0x40,
-  [HID_KEY_BRACKET_RIGHT] = 0x41,
-  [HID_KEY_BACKSLASH] = 0x58,
+  [HID_KEY_OBRACKET_AND_OBRACE] = 0x40,
+  [HID_KEY_OBRACKET_AND_OBRACE] = 0x41,
+  [HID_KEY_BACKSLASH_VERTICAL_BAR] = 0x58,
 
   [HID_KEY_CAPS_LOCK] = 0x77,
   [HID_KEY_A] = 0x4d,
@@ -76,8 +76,8 @@ static const uint8_t usb2sun[256] = {
   [HID_KEY_J] = 0x53,
   [HID_KEY_K] = 0x54,
   [HID_KEY_L] = 0x55,
-  [HID_KEY_SEMICOLON] = 0x56,
-  [HID_KEY_APOSTROPHE] = 0x57,
+  [HID_KEY_SEMICOLON_COLON] = 0x56,
+  [HID_KEY_SINGLE_AND_DOUBLE_QUOTE] = 0x57,
   [HID_KEY_ENTER] = 0x59,
 
   [HID_KEY_LEFT_SHIFT] = 0x63,

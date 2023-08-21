@@ -26,6 +26,7 @@
         "uart.h": "c",
         "stdlib.h": "c",
         "board.h": "c",
-        "babelfish.h": "c"
+        "babelfish.h": "c",
+        "debug.h": "c"
     }
 }
