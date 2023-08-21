@@ -73,119 +73,59 @@ void apollo_init() {
 void apollo_update() {
 }
 
-void apollo_kbd_report(hid_keyboard_report_t const *report) {
-    static bool down_state[256] = {false};
-	static uint8_t mod_down_state = 0;
-
-    uint8_t up_keys[12]; // up to 12 keys could have been released this frame (6 + modifiers)
-    uint8_t up_key_count = 0;
-	uint8_t new_mod_down = 0;
+void apollo_kbd_event(KeyboardEvent* events, uint16_t count) {
+	// current state of things, for kbd mode 0
+	static bool ctrl = false;
+	static bool shift = false;
+	static bool alt = false;
 
 	if (kbd_mode == Mode0_Compatibility) {
-		uint8_t hidcode = report->keycode[0];
-		uint16_t code = 0;
+		for (uint16_t i = 0; i < count; ++i) {
+			KeyboardEvent event = events[i];
 
-		bool ctrl =  (report->modifier & (KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTCTRL)) != 0;
-		bool shift = (report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT)) != 0;
+			switch (event.keycode) {
+				case HID_KEY_LEFTCTRL:
+				case HID_KEY_RIGHTCTRL:
+					ctrl = event.down;
+					break;
+				case HID_KEY_LEFTSHIFT:
+				case HID_KEY_RIGHTSHIFT:
+					shift = event.down;
+					break;
+				case HID_KEY_LEFTALT:
+				case HID_KEY_RIGHTALT:
+					alt = event.down;
+					break;
+				default:
+					break;
+			}
 
-		if (ctrl)
-			code = s_code_table[hidcode][State_Control];
-		else if (shift)
-			code = s_code_table[hidcode][State_Shifted];
-		else
-			code = s_code_table[hidcode][State_Unshifted];
+			uint16_t code;
+
+			if (ctrl)
+				code = s_code_table[event.keycode][State_Control];
+			else if (shift)
+				code = s_code_table[event.keycode][State_Shifted];
+			else
+				code = s_code_table[event.keycode][State_Unshifted];
 			
-		//DBG("Mode0: Translating %02x to %04x (%s %s)\n", hidcode, code, ctrl ? "ctrl" : "", shift ? "shift" : "");
-		if (code != 0) {
-			kbd_xmit(code);
+			//DBG("Mode0: Translating %02x to %04x (%s %s)\n", hidcode, code, ctrl ? "ctrl" : "", shift ? "shift" : "");
+			if (code != 0) {
+				kbd_xmit(code);
+			}
 		}
 
 		return;
 	}
 
-	// This is messy.  We really want raw key down/up from HID, but we're not in that mode.  So we have to reconstruct.
-	// Rule is -- modifiers go down before keys; keys go up before modifiers.
-	if (mod_down_state ^ report->modifier) {
-		uint8_t up_mod = mod_down_state ^ report->modifier;
-		new_mod_down = report->modifier & ~mod_down_state;
-		mod_down_state = report->modifier;
-
-		if (up_mod & KEYBOARD_MODIFIER_LEFTSHIFT) {
-			up_keys[up_key_count++] = HID_KEY_SHIFT_LEFT;
-		} else if (up_mod & KEYBOARD_MODIFIER_RIGHTSHIFT) {
-			up_keys[up_key_count++] = HID_KEY_SHIFT_RIGHT;
-		} else if (up_mod & KEYBOARD_MODIFIER_LEFTCTRL) {
-			up_keys[up_key_count++] = HID_KEY_CONTROL_LEFT;
-		} else if (up_mod & KEYBOARD_MODIFIER_RIGHTCTRL) {
-			up_keys[up_key_count++] = HID_KEY_CONTROL_RIGHT;
-		} else if (up_mod & KEYBOARD_MODIFIER_LEFTALT) {
-			up_keys[up_key_count++] = HID_KEY_ALT_LEFT;
-		} else if (up_mod & KEYBOARD_MODIFIER_RIGHTALT) {
-			up_keys[up_key_count++] = HID_KEY_ALT_RIGHT;
-		}
-	}
-
-	// find any released keys.  this is a silly loop.
-	for (int hidk = 1; hidk < 256; hidk++) {
-		if (!down_state[hidk])
-			continue;
-		for (int j = 0; j < 6; j++) {
-			if (report->keycode[j] == hidk) {
-				down_state[hidk] = false;
-				up_keys[up_key_count++] = hidk;
-				break;
-			}
-		}
-	}
-
-	set_mode(Mode1_Keystate);
-
-	// write all the released keys
-	for (int i = 0; i < up_key_count; i++) {
-		uint8_t hidcode = up_keys[i];
-		uint16_t code = s_code_table[hidcode][State_Up];
-		if (code != 0) {
-			kbd_xmit(code);
-		}
-	}
-
-	// now new down modifiers
-	if (new_mod_down) {
-		if (new_mod_down & KEYBOARD_MODIFIER_LEFTSHIFT) {
-			uint16_t code = s_code_table[HID_KEY_SHIFT_LEFT][State_Down];
-			kbd_xmit(code);
-		} else if (new_mod_down & KEYBOARD_MODIFIER_RIGHTSHIFT) {
-			uint16_t code = s_code_table[HID_KEY_SHIFT_RIGHT][State_Down];
-			kbd_xmit(code);
-		} else if (new_mod_down & KEYBOARD_MODIFIER_LEFTCTRL) {
-			uint16_t code = s_code_table[HID_KEY_CONTROL_LEFT][State_Down];
-			kbd_xmit(code);
-		} else if (new_mod_down & KEYBOARD_MODIFIER_RIGHTCTRL) {
-			uint16_t code = s_code_table[HID_KEY_CONTROL_RIGHT][State_Down];
-			kbd_xmit(code);
-		} else if (new_mod_down & KEYBOARD_MODIFIER_LEFTALT) {
-			uint16_t code = s_code_table[HID_KEY_ALT_LEFT][State_Down];
-			kbd_xmit(code);
-		} else if (new_mod_down & KEYBOARD_MODIFIER_RIGHTALT) {
-			uint16_t code = s_code_table[HID_KEY_ALT_RIGHT][State_Down];
-			kbd_xmit(code);
-		}
-	}
-
-	for (int i = 0; i < 6; i++) {
-		uint8_t hidcode = report->keycode[i];
-		if (hidcode == 0)
-			continue;
-
-		uint16_t code = s_code_table[hidcode][State_Down];
-		if (code != 0) {
-			kbd_xmit(code);
-		}
-		down_state[hidcode] = true;
+	for (uint16_t i = 0; i < count; ++i) {
+		KeyboardEvent event = events[i];
+		uint16_t code = s_code_table[event.keycode][event.down ? State_Down : State_Up];
+		kbd_xmit(code);
 	}
 }
 
-void apollo_mouse_report(hid_mouse_report_t const *report) {
+void apollo_mouse_event(const MouseEvent* events, uint8_t count) {
 	if (kbd_mode == Mode0_Compatibility) {
 		// don't report mouse status in mode 0
 		// there's something about sending the same report prefixed with a 0xdf in
@@ -194,9 +134,9 @@ void apollo_mouse_report(hid_mouse_report_t const *report) {
 	}
 
 	set_mode(Mode2_RelativeCursorControl);
-	kbd_xmit(0xf0 ^ report->buttons);
-	kbd_xmit(report->x);
-	kbd_xmit(report->y);
+	kbd_xmit(0xf0 ^ report->buttons_current);
+	kbd_xmit(report->dx);
+	kbd_xmit(report->dy);
 }
 
 static void kbd_tx_str(const char *str) {
@@ -388,12 +328,12 @@ static uint16_t s_code_table[256][StateMax] = {
 
         // TODO mode1 will want us to translate modifier keys
 		[HID_KEY_CAPS_LOCK] = /* D1      CAPS LOCK   */ { NOP,  NOP,  NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
-		[HID_KEY_SHIFT_LEFT] = /* E1      SHIFT       */ { 0x5E, 0xDE, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
-		[HID_KEY_CONTROL_LEFT] = /* DO      CTRL        */ { 0x43, 0xC3, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
+		[HID_KEY_LEFT_SHIFT] = /* E1      SHIFT       */ { 0x5E, 0xDE, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
+		[HID_KEY_LEFT_CONTROL] = /* DO      CTRL        */ { 0x43, 0xC3, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
 // FIXME: ALT swapped! (vlad: ???)
-		[HID_KEY_ALT_RIGHT] = /* ??      ALT_R       */ { 0x77, 0xF7, 0xfe00,   NOP,    NOP,    NOP,      0xfe01,  No  },
-		[HID_KEY_ALT_LEFT] = /* ??      ALT_L       */ { 0x75, 0xF5, 0xfe02,   NOP,    NOP,    NOP,      0xfe03,  No  },
-		[HID_KEY_SHIFT_RIGHT] = /* E12     SHIFT       */ { 0x6A, 0xEA, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
+		[HID_KEY_RIGHT_ALT] = /* ??      ALT_R       */ { 0x77, 0xF7, 0xfe00,   NOP,    NOP,    NOP,      0xfe01,  No  },
+		[HID_KEY_LEFT_ALT] = /* ??      ALT_L       */ { 0x75, 0xF5, 0xfe02,   NOP,    NOP,    NOP,      0xfe03,  No  },
+		[HID_KEY_RIGHT_SHIFT] = /* E12     SHIFT       */ { 0x6A, 0xEA, NOP,      NOP,    NOP,    NOP,      NOP,     NOP },
 
 #if false
 #if !MAP_APOLLO_KEYS

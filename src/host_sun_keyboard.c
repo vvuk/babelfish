@@ -78,20 +78,20 @@ void sun_kbd_report(hid_keyboard_report_t const *report) {
   memset(current_key_list, 0, sizeof(current_key_list));
 
   if (report->modifier != 0) {
-    current_key_list[usb2sun[HID_KEY_SHIFT_LEFT]]    = report->modifier & KEYBOARD_MODIFIER_LEFTSHIFT  ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_CONTROL_LEFT]]  = report->modifier & KEYBOARD_MODIFIER_LEFTCTRL   ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_ALT_LEFT]]      = report->modifier & KEYBOARD_MODIFIER_LEFTALT    ? 1 : 0;
+    current_key_list[usb2sun[HID_KEY_LEFT_SHIFT]]    = report->modifier & KEYBOARD_MODIFIER_LEFTSHIFT  ? 1 : 0;
+    current_key_list[usb2sun[HID_KEY_LEFT_CONTROL]]  = report->modifier & KEYBOARD_MODIFIER_LEFTCTRL   ? 1 : 0;
+    current_key_list[usb2sun[HID_KEY_LEFT_ALT]]      = report->modifier & KEYBOARD_MODIFIER_LEFTALT    ? 1 : 0;
     current_key_list[usb2sun[HID_KEY_GUI_LEFT]]      = report->modifier & KEYBOARD_MODIFIER_LEFTGUI    ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_SHIFT_RIGHT]]   = report->modifier & KEYBOARD_MODIFIER_RIGHTSHIFT ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_CONTROL_RIGHT]] = report->modifier & KEYBOARD_MODIFIER_RIGHTCTRL  ? 1 : 0;
-    current_key_list[usb2sun[HID_KEY_ALT_RIGHT]]     = report->modifier & KEYBOARD_MODIFIER_RIGHTALT   ? 1 : 0;
+    current_key_list[usb2sun[HID_KEY_RIGHT_SHIFT]]   = report->modifier & KEYBOARD_MODIFIER_RIGHTSHIFT ? 1 : 0;
+    current_key_list[usb2sun[HID_KEY_RIGHT_CONTROL]] = report->modifier & KEYBOARD_MODIFIER_RIGHTCTRL  ? 1 : 0;
+    current_key_list[usb2sun[HID_KEY_RIGHT_ALT]]     = report->modifier & KEYBOARD_MODIFIER_RIGHTALT   ? 1 : 0;
     current_key_list[usb2sun[HID_KEY_GUI_RIGHT]]     = report->modifier & KEYBOARD_MODIFIER_RIGHTGUI   ? 1 : 0;
   }
 
   uint8_t i = 0;
   if (report->modifier == hotkey_combo) {
-    current_key_list[usb2sun[HID_KEY_SHIFT_LEFT]] = 0;
-    current_key_list[usb2sun[HID_KEY_CONTROL_LEFT]] = 0;
+    current_key_list[usb2sun[HID_KEY_LEFT_SHIFT]] = 0;
+    current_key_list[usb2sun[HID_KEY_LEFT_CONTROL]] = 0;
     switch (report->keycode[i]) {
       case HID_KEY_F1:
         current_key_list[SUN_KEY_STOP] = 1;

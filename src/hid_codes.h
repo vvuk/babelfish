@@ -209,11 +209,11 @@
 #define HID_KEY_KEYPAD_OCTAL                       0xDB
 #define HID_KEY_KEYPAD_DECIMAL                     0xDC
 #define HID_KEY_KEYPAD_HEXADECIMAL                 0xDD
-#define HID_KEY_LEFTCONTROL                        0xE0
-#define HID_KEY_LEFTSHIFT                          0xE1
-#define HID_KEY_LEFTALT                            0xE2
+#define HID_KEY_LEFT_CONTROL                        0xE0
+#define HID_KEY_LEFT_SHIFT                          0xE1
+#define HID_KEY_LEFT_ALT                            0xE2
 #define HID_KEY_LEFT_GUI                           0xE3
-#define HID_KEY_RIGHTCONTROL                       0xE4
-#define HID_KEY_RIGHTSHIFT                         0xE5
-#define HID_KEY_RIGHTALT                           0xE6
+#define HID_KEY_RIGHT_CONTROL                       0xE4
+#define HID_KEY_RIGHT_SHIFT                         0xE5
+#define HID_KEY_RIGHT_ALT                           0xE6
 #define HID_KEY_RIGHT_GUI                          0xE7

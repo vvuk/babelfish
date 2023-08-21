@@ -16,15 +16,15 @@ pico_sdk_init()
 # include(${CMAKE_CURRENT_LIST_DIR}/external/pico-pio-usb/CMakeLists.txt)
 
 add_executable(usb2multi
-  main.c
-  bootmode.c
-  hid_app.c
-  host_sun.c
-  host_sun_mouse.c
-  host_sun_keyboard.c
-  host_adb.c
-  host_apollo.c
-  debug.c
+  src/main.c
+  src/bootmode.c
+  src/hid_app.c
+  src/host_sun.c
+  src/host_sun_mouse.c
+  src/host_sun_keyboard.c
+  src/host_adb.c
+  src/host_apollo.c
+  src/debug.c
 )
 target_include_directories(usb2multi PUBLIC
   ${CMAKE_CURRENT_LIST_DIR})

@@ -18,17 +18,20 @@ typedef struct {
 
 typedef struct {
     // relative mouse motion
-    int16_t dx;
-    int16_t dy;
+    int8_t dx;
+    int8_t dy;
 
     // relative wheel motion
-    int16_t dwheel;
+    int8_t dwheel;
 
     // buttons just pressed
     uint8_t buttons_down;
 
     // buttons just released
     uint8_t buttons_up;
+
+    // current buttons
+    uint8_t buttons_current;
 } MouseEvent;
 
 typedef struct {

@@ -80,7 +80,7 @@ static const uint8_t usb2sun[256] = {
   [HID_KEY_APOSTROPHE] = 0x57,
   [HID_KEY_ENTER] = 0x59,
 
-  [HID_KEY_SHIFT_LEFT] = 0x63,
+  [HID_KEY_LEFT_SHIFT] = 0x63,
   [HID_KEY_Z] = 0x64,
   [HID_KEY_X] = 0x65,
   [HID_KEY_C] = 0x66,
@@ -91,15 +91,15 @@ static const uint8_t usb2sun[256] = {
   [HID_KEY_COMMA] = 0x6b,
   [HID_KEY_PERIOD] = 0x6c,
   [HID_KEY_SLASH] = 0x6d,
-  [HID_KEY_SHIFT_RIGHT] = 0x6e,
+  [HID_KEY_RIGHT_SHIFT] = 0x6e,
 
-  [HID_KEY_CONTROL_LEFT] = 0x4c,
+  [HID_KEY_LEFT_CONTROL] = 0x4c,
   [HID_KEY_GUI_LEFT] = 0x78,      // left triangle
-  [HID_KEY_ALT_LEFT] = 0x13,
+  [HID_KEY_LEFT_ALT] = 0x13,
   [HID_KEY_SPACE] = 0x79,
-  [HID_KEY_ALT_RIGHT] = 0x0d,     // alt graph
+  [HID_KEY_RIGHT_ALT] = 0x0d,     // alt graph
   [HID_KEY_GUI_RIGHT] = 0x7a,     // right triangle
-  [HID_KEY_CONTROL_RIGHT] = 0x43, // compose
+  [HID_KEY_RIGHT_CONTROL] = 0x43, // compose
 
   [HID_KEY_INSERT] = 0x2c,
   [HID_KEY_HOME] = 0x34,
