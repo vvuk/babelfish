@@ -75,6 +75,8 @@ extern void NAME##_mouse_event(const MouseEvent* events, uint8_t count);
     NAME##_mouse_event \
 }
 
+void babelfish_uart_config(int uidx, char ab);
+
 void translate_boot_kbd_report(hid_keyboard_report_t const *report, HostDevice* host);
 void translate_boot_mouse_report(hid_mouse_report_t const *report, HostDevice* host);
 

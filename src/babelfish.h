@@ -1,6 +1,8 @@
 #ifndef BABLEFISH_H_
 #define BABELFISH_H_
 
+#include "host.h"
+
 #define U0_TX_A_GPIO 0
 #define U0_RX_A_GPIO 1
 #define U1_TX_A_GPIO 4
