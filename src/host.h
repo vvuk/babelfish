@@ -2,7 +2,7 @@
 #define HOST_H
 
 #include <stdint.h>
-
+#include <pico/mutex.h>
 #include <tusb.h>
 
 typedef struct {
@@ -38,8 +38,8 @@ typedef struct {
     char name[16];
     void (*init)();
     void (*update)();
-    void (*kbd_event)(const KeyboardEvent* events, uint8_t count);
-    void (*mouse_event)(const MouseEvent* events, uint8_t count);
+    void (*kbd_event)(const KeyboardEvent events);
+    void (*mouse_event)(const MouseEvent events);
 } HostDevice;
 
 typedef struct uart_inst uart_inst_t;
@@ -53,19 +53,23 @@ typedef struct {
 
 #define EVENT_IS_HOST_MOD(event) (event.keycode == HID_KEY_LEFT_GUI || event.keycode == HID_KEY_RIGHT_GUI || event.keycode == HID_KEY_RIGHT_ALT)
 
-#define NUM_STATIC_EVENTS 16
 
 extern HostDevice *host;
 extern OutputUartDevice out_uart;
-extern KeyboardEvent static_kbd_events[NUM_STATIC_EVENTS];
-extern MouseEvent static_mouse_events[NUM_STATIC_EVENTS];
+
+#define MAX_QUEUED_EVENTS 32
+
+void enqueue_kbd_event(const KeyboardEvent* event);
+void enqueue_mouse_event(const MouseEvent* event);
+void get_queued_kbd_events(KeyboardEvent* events, uint* count);
+void get_queued_mouse_events(MouseEvent* events, uint* count);
 
 /* Convenience */
 #define HOST_PROTOTYPES(NAME) \
 extern void NAME##_init(); \
 extern void NAME##_update(); \
-extern void NAME##_kbd_event(const KeyboardEvent* events, uint8_t count); \
-extern void NAME##_mouse_event(const MouseEvent* events, uint8_t count);
+extern void NAME##_kbd_event(const KeyboardEvent event); \
+extern void NAME##_mouse_event(const MouseEvent event);
 
 #define HOST_ENTRY(NAME)  { \
     #NAME, \

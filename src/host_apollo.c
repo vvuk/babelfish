@@ -68,7 +68,7 @@ void apollo_init() {
 void apollo_update() {
 }
 
-void apollo_kbd_event(KeyboardEvent* events, uint16_t count) {
+void apollo_kbd_event(const KeyboardEvent event) {
 	// current state of things, for kbd mode 0
 	static bool ctrl = false;
 	static bool shift = false;
@@ -78,62 +78,52 @@ void apollo_kbd_event(KeyboardEvent* events, uint16_t count) {
 	// a number of the extra Apollo keys
 	static bool gui = false;
 
+	// record state of host-mod gui (windows) key
+	if (EVENT_IS_HOST_MOD(event)) {
+		gui = event.down;
+		return; // don't send to the host
+	}
+
 	if (kbd_mode == Mode0_Compatibility) {
-		for (uint16_t i = 0; i < count; ++i) {
-			KeyboardEvent event = events[i];
+		switch (event.keycode) {
+			case HID_KEY_LEFT_CONTROL:
+			case HID_KEY_RIGHT_CONTROL:
+				ctrl = event.down;
+				break;
+			case HID_KEY_LEFT_SHIFT:
+			case HID_KEY_RIGHT_SHIFT:
+				shift = event.down;
+				break;
+			case HID_KEY_LEFT_ALT:
+			case HID_KEY_RIGHT_ALT:
+				alt = event.down;
+				break;
+			default:
+				break;
+		}
 
-			switch (event.keycode) {
-				case HID_KEY_LEFT_CONTROL:
-				case HID_KEY_RIGHT_CONTROL:
-					ctrl = event.down;
-					break;
-				case HID_KEY_LEFT_SHIFT:
-				case HID_KEY_RIGHT_SHIFT:
-					shift = event.down;
-					break;
-				case HID_KEY_LEFT_ALT:
-					alt = event.down;
-					break;
-				case HID_KEY_RIGHT_ALT:
-				case HID_KEY_LEFT_GUI:
-				case HID_KEY_RIGHT_GUI:
-					gui = event.down;
-					continue; // don't send to the host.
-				default:
-					break;
-			}
+		uint16_t code;
 
-			uint16_t code;
-
-			if (ctrl)
-				code = s_code_table[gui][event.keycode][State_Control];
-			else if (shift)
-				code = s_code_table[gui][event.keycode][State_Shifted];
-			else
-				code = s_code_table[gui][event.keycode][State_Unshifted];
-			
-			//DBG("Mode0: Translating %02x to %04x (%s %s)\n", hidcode, code, ctrl ? "ctrl" : "", shift ? "shift" : "");
-			if (code != 0) {
-				kbd_xmit(code);
-			}
+		if (ctrl)
+			code = s_code_table[gui][event.keycode][State_Control];
+		else if (shift)
+			code = s_code_table[gui][event.keycode][State_Shifted];
+		else
+			code = s_code_table[gui][event.keycode][State_Unshifted];
+		
+		//DBG("Mode0: Translating %02x to %04x (%s %s)\n", hidcode, code, ctrl ? "ctrl" : "", shift ? "shift" : "");
+		if (code != 0) {
+			kbd_xmit(code);
 		}
 
 		return;
 	}
 
-	for (uint16_t i = 0; i < count; ++i) {
-		KeyboardEvent event = events[i];
-		if (event.keycode == HID_KEY_RIGHT_ALT || event.keycode == HID_KEY_LEFT_GUI || event.keycode == HID_KEY_RIGHT_GUI) {
-			gui = event.down;
-			continue;
-		}
-
-		uint16_t code = s_code_table[gui][event.keycode][event.down ? State_Down : State_Up];
-		kbd_xmit(code);
-	}
+	uint16_t code = s_code_table[gui][event.keycode][event.down ? State_Down : State_Up];
+	kbd_xmit(code);
 }
 
-void apollo_mouse_event(const MouseEvent* events, uint8_t count) {
+void apollo_mouse_event(const MouseEvent event) {
 	if (kbd_mode == Mode0_Compatibility) {
 		// don't report mouse status in mode 0
 		// there's something about sending the same report prefixed with a 0xdf in
@@ -143,11 +133,9 @@ void apollo_mouse_event(const MouseEvent* events, uint8_t count) {
 
 	set_mode(Mode2_RelativeCursorControl);
 
-	for (uint16_t i = 0; i < count; ++i) {
-		kbd_xmit(0xf0 ^ events[i].buttons_current);
-		kbd_xmit(events[i].dx);
-		kbd_xmit(events[i].dy);
-	}
+	kbd_xmit(0xf0 ^ event.buttons_current);
+	kbd_xmit(event.dx);
+	kbd_xmit(event.dy);
 }
 
 static void kbd_tx_str(const char *str) {

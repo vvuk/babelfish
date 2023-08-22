@@ -111,10 +111,10 @@ void adb_update() {
     }
 }
 
-void adb_kbd_event(const KeyboardEvent* events, uint8_t count) {
+void adb_kbd_event(const KeyboardEvent event) {
 }
 
-void adb_mouse_event(const MouseEvent* events, uint8_t count) {
+void adb_mouse_event(const MouseEvent event) {
 }
 
 uint8_t cmd_addr = 0;

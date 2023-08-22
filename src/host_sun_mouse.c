@@ -67,18 +67,14 @@ void sun_mouse_tx() {
   }
 }
 
-void sun_mouse_event(MouseEvent* events, uint16_t count) {
-  for (uint16_t i = 0; i < count; ++i) {
-    MouseEvent event = events[i];
-
-    btns = ((event.buttons_current & MOUSE_BUTTON_LEFT)   ? 0 : 4)
-        | ((event.buttons_current & MOUSE_BUTTON_MIDDLE) ? 0 : 2)
-        | ((event.buttons_current & MOUSE_BUTTON_RIGHT)  ? 0 : 1)
-    ;
-    delta_x += event.dx;
-    delta_y += -event.dy;
-    delta_x = clamp(delta_x, -127, 127);
-    delta_y = clamp(delta_y, -127, 127);
-    updated = true;
-  }
+void sun_mouse_event(const MouseEvent event) {
+  btns = ((event.buttons_current & MOUSE_BUTTON_LEFT)   ? 0 : 4)
+      | ((event.buttons_current & MOUSE_BUTTON_MIDDLE) ? 0 : 2)
+      | ((event.buttons_current & MOUSE_BUTTON_RIGHT)  ? 0 : 1)
+  ;
+  delta_x += event.dx;
+  delta_y += -event.dy;
+  delta_x = clamp(delta_x, -127, 127);
+  delta_y = clamp(delta_y, -127, 127);
+  updated = true;
 }

@@ -78,7 +78,7 @@ translate_boot_kbd_report(hid_keyboard_report_t const *report, HostDevice* host)
 #define WRITE_EVENT(page, code, downval) \
 	do { \
 		KeyboardEvent evt = {page, code, .down = downval}; \
-		static_kbd_events[written_events++] = evt; \
+		enqueue_kbd_event(&evt); \
 	} while (0)
 
 	// write all the released keys
@@ -118,8 +118,6 @@ translate_boot_kbd_report(hid_keyboard_report_t const *report, HostDevice* host)
 
 		WRITE_EVENT(0, hidcode, true);
 	}
-
-    host->kbd_event(static_kbd_events, written_events);
 }
 
 void
@@ -139,5 +137,5 @@ translate_boot_mouse_report(hid_mouse_report_t const *report, HostDevice* host)
 
     buttons_down = current_buttons_state;
 
-    host->mouse_event(&event, 1);
+	enqueue_mouse_event(&event);
 }

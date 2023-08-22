@@ -31,9 +31,9 @@ target_include_directories(babelfish PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}/src)
 target_link_libraries(babelfish PUBLIC
   pico_stdlib
+  pico_sync
   pico_multicore
   tinyusb_host
-  tinyusb_board
   tinyusb_pico_pio_usb)
 
 # enable usb output, disable uart output

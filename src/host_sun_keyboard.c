@@ -63,53 +63,49 @@ void on_keyboard_rx() {
     }
 }
 
-void sun_kbd_event(KeyboardEvent* events, uint16_t count) {
+void sun_kbd_event(const KeyboardEvent event) {
   // if the gui/sun-extra-keys modifier is pressed
   static bool gui = false;
   static uint32_t keys_down = 0;
 
-  for (uint16_t i = 0; i < count; ++i) {
-    KeyboardEvent event = events[i];
+  if (event.page != 0)
+    return;
 
-    if (event.page != 0)
-      continue;
+  if (EVENT_IS_HOST_MOD(event)) {
+    gui = event.down;
+    return;
+  }
 
-    if (EVENT_IS_HOST_MOD(event)) {
-      gui = event.down;
-      continue;
-    }
-
-    if (event.down) {
-      keys_down++;
-    } else {
-      keys_down--;
-    }
+  if (event.down) {
+    keys_down++;
+  } else {
+    keys_down--;
+  }
 
 #define SEND_SUN_KEY(suncode, down) uart_putc_raw(out_uart.uart, down ? (suncode) : ((suncode) | 0x80))
 
-    if (gui) {
-      switch (event.keycode) {
-        case HID_KEY_F1: SEND_SUN_KEY(SUN_KEY_STOP, event.down); break;
-        case HID_KEY_F2: SEND_SUN_KEY(SUN_KEY_AGAIN, event.down); break;
-        case HID_KEY_1: SEND_SUN_KEY(SUN_KEY_PROPS, event.down); break;
-        case HID_KEY_2: SEND_SUN_KEY(SUN_KEY_UNDO, event.down); break;
-        case HID_KEY_Q: SEND_SUN_KEY(SUN_KEY_FRONT, event.down); break;
-        case HID_KEY_W: SEND_SUN_KEY(SUN_KEY_COPY, event.down); break;
-        case HID_KEY_A: SEND_SUN_KEY(SUN_KEY_OPEN, event.down); break;
-        case HID_KEY_S: SEND_SUN_KEY(SUN_KEY_PASTE, event.down); break;
-        case HID_KEY_Z: SEND_SUN_KEY(SUN_KEY_FIND, event.down); break;
-        case HID_KEY_X: SEND_SUN_KEY(SUN_KEY_CUT, event.down); break;
-      }
-
-      continue;
+  if (gui) {
+    switch (event.keycode) {
+      case HID_KEY_F1: SEND_SUN_KEY(SUN_KEY_STOP, event.down); break;
+      case HID_KEY_F2: SEND_SUN_KEY(SUN_KEY_AGAIN, event.down); break;
+      case HID_KEY_1: SEND_SUN_KEY(SUN_KEY_PROPS, event.down); break;
+      case HID_KEY_2: SEND_SUN_KEY(SUN_KEY_UNDO, event.down); break;
+      case HID_KEY_Q: SEND_SUN_KEY(SUN_KEY_FRONT, event.down); break;
+      case HID_KEY_W: SEND_SUN_KEY(SUN_KEY_COPY, event.down); break;
+      case HID_KEY_A: SEND_SUN_KEY(SUN_KEY_OPEN, event.down); break;
+      case HID_KEY_S: SEND_SUN_KEY(SUN_KEY_PASTE, event.down); break;
+      case HID_KEY_Z: SEND_SUN_KEY(SUN_KEY_FIND, event.down); break;
+      case HID_KEY_X: SEND_SUN_KEY(SUN_KEY_CUT, event.down); break;
     }
 
-    if (usb2sun[event.keycode] != 0) {
-      SEND_SUN_KEY(usb2sun[event.keycode], event.down);
-    }
+    return;
+  }
 
-    if (keys_down == 0) {
-      uart_putc_raw(out_uart.uart, 0x7f);
-    }
+  if (usb2sun[event.keycode] != 0) {
+    SEND_SUN_KEY(usb2sun[event.keycode], event.down);
+  }
+
+  if (keys_down == 0) {
+    uart_putc_raw(out_uart.uart, 0x7f);
   }
 }
