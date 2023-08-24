@@ -259,7 +259,9 @@ void adb_state_machine(uint64_t cur_time, bool is_rise, bool is_fall) {
         break;
     case ListenData1Hi:
         expect_fall_after(cur_time, is_rise, DATA_1_H_TIME_US);
-        data_value = data_value | (1 << (data_expected_bits-1));
+        //data_value = data_value | (1 << (data_expected_bits-1));
+        data_value <<= 1;
+        data_value |= 1;
         data_expected_bits--;
         if (data_expected_bits == 0) {
             in_state = ListenStopBitLo;
@@ -270,6 +272,8 @@ void adb_state_machine(uint64_t cur_time, bool is_rise, bool is_fall) {
     case ListenData0Hi:
         expect_fall_after(cur_time, is_rise, DATA_0_H_TIME_US);
         //data_value = data_value | (0 << (data_expected_bits-1)); // no-op
+        data_value <<= 1;
+        //data_value |= 0; // no-op
         data_expected_bits--;
         if (data_expected_bits == 0) {
             in_state = ListenStopBitLo;

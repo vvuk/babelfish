@@ -1,9 +1,11 @@
 /*
- * USB2Sun
- *  Connect a USB keyboard and mouse to your Sun workstation!
+ * Babelfish
  *
- * Joakim L. Gilje
- * Adapted from the TinyUSB Host examples
+ * Multihost USB keyboard/mouse adapter
+ * 
+ * Copyright (C) 2023 Vladimir Vukicevic
+ * 
+ * Originally based on USB2SUN 
  */
 
 #include <pico/stdlib.h>
@@ -102,16 +104,12 @@ void mainloop(void)
 
 void usb_host_setup()
 {
-  // Use tuh_configure() to pass pio configuration to the host stack
-  // Note: tuh_configure() must be called before
   pio_usb_configuration_t pio_cfg = PIO_USB_DEFAULT_CONFIG;
   pio_cfg.pinout = PIO_USB_PINOUT_DMDP;
   pio_cfg.pin_dp = USB_AUX_DP_GPIO;
 
   tuh_configure(1, TUH_CFGID_RPI_PIO_USB_CONFIGURATION, &pio_cfg);
 
-  // To run USB SOF interrupt in core1, init host stack for pio_usb (roothub
-  // port1) on core1
   tuh_init(1);
 }
 
