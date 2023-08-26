@@ -1,4 +1,3 @@
-#include <bsp/board.h>
 #include <pico/stdlib.h>
 #include <hardware/uart.h>
 #include <hardware/irq.h>
@@ -105,7 +104,6 @@ process_char:
 void
 debug_init()
 {
-    stdio_init_all();
     stdio_set_chars_available_callback(debug_chars_available, NULL);
 }
 

@@ -1,10 +1,9 @@
-#include <bsp/board.h>
-#include <tusb.h>
-
 #include <pico/stdlib.h>
 #include <hardware/uart.h>
+#include <tusb.h>
 
 #include "host.h"
+#include "babelfish.h"
 
 static bool serial_data_in_tail = false;
 static bool updated = false;
@@ -14,14 +13,16 @@ static int32_t delta_y = 0;
 static char btns = NO_BUTTONS;
 static uint32_t interval = 40;
 
+#define UART_MOUSE_NUM 0
 #define UART_MOUSE_ID uart0
-#define UART_MOUSE_TX_PIN 0
+
 void sun_mouse_uart_init() {
+  babelfish_uart_config(UART_MOUSE_NUM, 'b');
+
   uart_init(UART_MOUSE_ID, 1200);
-  gpio_set_function(UART_MOUSE_TX_PIN, GPIO_FUNC_UART);
   uart_set_hw_flow(UART_MOUSE_ID, false, false);
   uart_set_format(UART_MOUSE_ID, 8, 1, UART_PARITY_NONE);
-  gpio_set_outover(UART_MOUSE_TX_PIN, GPIO_OVERRIDE_INVERT);
+  gpio_set_outover(U0_TX_B_GPIO, GPIO_OVERRIDE_INVERT);
 }
 
 static inline int32_t clamp(int32_t value, int32_t min, int32_t max) {
@@ -52,7 +53,7 @@ static uint32_t push_tail_packet() {
 
 void sun_mouse_tx() {
   static uint32_t start_ms = 0;
-  if ((board_millis() - start_ms) < interval) {
+  if ((to_ms_since_boot(get_absolute_time()) - start_ms) < interval) {
     return;
   }
   start_ms += interval;

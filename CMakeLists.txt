@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-set(PICO_SDK_PATH "/opt/UnitySrc/proj/pico-sdk")
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
 
 include(pico_sdk_import.cmake)

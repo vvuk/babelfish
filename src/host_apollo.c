@@ -1,9 +1,7 @@
-#include <bsp/board.h>
-#include <tusb.h>
-
 #include <pico/stdlib.h>
 #include <hardware/uart.h>
 #include <hardware/irq.h>
+#include <tusb.h>
 
 #include "host.h"
 #include "hid_codes.h"
@@ -29,6 +27,10 @@ typedef enum {
 
 static KeyboardMode kbd_mode = Mode0_Compatibility;
 
+#define UART_KEYBOARD_NUM 1
+#define UART_KEYBOARD_ID uart1
+#define UART_KEYBOARD_IRQ UART1_IRQ
+
 static void on_keyboard_rx();
 
 // defined at end of file
@@ -38,7 +40,7 @@ static void on_keyboard_rx();
 static uint16_t s_code_table[2][256][StateMax];
 
 static void kbd_xmit(char c) {
-	uart_putc_raw(out_uart.uart, c);
+	uart_putc_raw(UART_KEYBOARD_ID, c);
 }
 
 static void force_mode(KeyboardMode mode) {
@@ -55,14 +57,19 @@ static void set_mode(KeyboardMode mode) {
 }
 
 void apollo_init() {
-  uart_init(out_uart.uart, 1200);
-  uart_set_hw_flow(out_uart.uart, false, false);
-  uart_set_format(out_uart.uart, 8, 1, UART_PARITY_EVEN);
+	DBG("Apollo keyboard and mouse emulation: using UART1, B port.\n");
+	DBG("Configure level shifter for 5V.\n");
 
-  irq_set_exclusive_handler(out_uart.uart_irq, on_keyboard_rx);
-  irq_set_enabled(out_uart.uart_irq, true);
+	babelfish_uart_config(UART_KEYBOARD_NUM, 'b');
 
-  uart_set_irq_enables(out_uart.uart, true, false);
+	uart_init(UART_KEYBOARD_ID, 1200);
+	uart_set_hw_flow(UART_KEYBOARD_ID, false, false);
+	uart_set_format(UART_KEYBOARD_ID, 8, 1, UART_PARITY_EVEN);
+
+	irq_set_exclusive_handler(UART_KEYBOARD_IRQ, on_keyboard_rx);
+	irq_set_enabled(UART_KEYBOARD_IRQ, true);
+
+	uart_set_irq_enables(UART_KEYBOARD_ID, true, false);
 }
 
 void apollo_update() {
@@ -150,8 +157,8 @@ void on_keyboard_rx() {
     static int kbd_cmd_bytes = 0;
 	static bool first_irq = true;
 
-    while (uart_is_readable(out_uart.uart)) {
-        uint8_t ch = uart_getc(out_uart.uart);
+    while (uart_is_readable(UART_KEYBOARD_ID)) {
+        uint8_t ch = uart_getc(UART_KEYBOARD_ID);
 
         if (!kbd_reading_cmd) {
 			if (ch == 0x00) {

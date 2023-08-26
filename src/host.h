@@ -42,20 +42,9 @@ typedef struct {
     void (*mouse_event)(const MouseEvent events);
 } HostDevice;
 
-typedef struct uart_inst uart_inst_t;
-
-typedef struct {
-    uart_inst_t *uart;
-    uint uart_irq;
-    uint uart_rx_gpio;
-    uint uart_tx_gpio;
-} OutputUartDevice;
-
 #define EVENT_IS_HOST_MOD(event) (event.keycode == HID_KEY_LEFT_GUI || event.keycode == HID_KEY_RIGHT_GUI || event.keycode == HID_KEY_RIGHT_ALT)
 
-
 extern HostDevice *host;
-extern OutputUartDevice out_uart;
 
 #define MAX_QUEUED_EVENTS 32
 

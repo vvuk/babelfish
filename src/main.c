@@ -1,11 +1,11 @@
 /*
  * Babelfish
+ * Copyright (C) 2023 Vladimir Vukicevic
  *
  * Multihost USB keyboard/mouse adapter
  * 
- * Copyright (C) 2023 Vladimir Vukicevic
- * 
- * Originally based on USB2SUN 
+ * Originally based on USB2Sun by Joakim L. Gilje
+ * Originally based on TinyUSB Host examples
  */
 
 #include <pico/stdlib.h>
@@ -36,7 +36,6 @@ static HostDevice hosts[] = {
 static int g_current_host_index = 2;
 
 HostDevice *host = NULL;
-OutputUartDevice out_uart;
 KeyboardEvent kbd_event_queue[MAX_QUEUED_EVENTS];
 MouseEvent mouse_event_queue[MAX_QUEUED_EVENTS];
 uint8_t kbd_event_queue_count = 0;
@@ -58,8 +57,6 @@ int main(void)
   DEBUG_INIT();
 
   mutex_init(&event_queue_mutex);
-
-  babelfish_uart_config(0, 'a');
 
   // Initialize Core 1, and put PIO-USB on it with TinyUSB
   multicore_reset_core1();

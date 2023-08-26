@@ -23,7 +23,6 @@
  *
  */
 
-#include <bsp/board.h>
 #include <hardware/uart.h>
 #include <tusb.h>
 

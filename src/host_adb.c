@@ -1,8 +1,6 @@
-#include <bsp/board.h>
-#include <tusb.h>
-
 #include <pico/stdlib.h>
 #include <pico/time.h>
+#include <tusb.h>
 
 #include "host.h"
 

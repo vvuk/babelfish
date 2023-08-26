@@ -1,6 +1,5 @@
 #include <pico/stdlib.h>
 #include <pico/multicore.h>
-#include <bsp/board.h>
 #include <tusb.h>
 #include <stdarg.h>
 #include <pio_usb.h>
