@@ -3,7 +3,7 @@
 #include "hid_codes.h"
 
 void
-translate_boot_kbd_report(hid_keyboard_report_t const *report, HostDevice* host)
+translate_boot_kbd_report(hid_keyboard_report_t const *report)
 {
 	static uint8_t mod_down_state = 0;
 
@@ -121,7 +121,7 @@ translate_boot_kbd_report(hid_keyboard_report_t const *report, HostDevice* host)
 }
 
 void
-translate_boot_mouse_report(hid_mouse_report_t const *report, HostDevice* host)
+translate_boot_mouse_report(hid_mouse_report_t const *report)
 {
     static uint16_t buttons_down = 0;
 

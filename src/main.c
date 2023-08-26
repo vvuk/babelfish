@@ -124,16 +124,6 @@ void core1_main(void)
   }
 }
 
-void tusb_on_kbd_report(const hid_keyboard_report_t* report)
-{
-  translate_boot_kbd_report(report, host);
-}
-
-void tusb_on_mouse_report(const hid_mouse_report_t* report)
-{
-  translate_boot_mouse_report(report, host);
-}
-
 void enqueue_kbd_event(const KeyboardEvent* event)
 {
   mutex_enter_blocking(&event_queue_mutex);
