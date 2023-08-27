@@ -41,7 +41,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
 
   hid_info[instance].report_count = tuh_hid_parse_report_descriptor(hid_info[instance].report_info, MAX_REPORT, desc_report, desc_len);
   DBG("HID has %u reports \r\n", hid_info[instance].report_count);
-  for (int i = 0; i < hid_info[instance].report_count) {
+  for (int i = 0; i < hid_info[instance].report_count; ++i) {
     const tuh_hid_report_info_t* info = &hid_info[instance].report_info[i];
     DBG("  Report %d: id=%d, usage=%d, usage_page=%d\r\n", i, info->report_id, info->usage, info->usage_page);
   }
@@ -50,7 +50,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
   if (proto == HID_PROTOCOL_BOOT) {
     const char* protocol_str[] = { "None", "Keyboard", "Mouse" };
     uint8_t const itf_protocol = tuh_hid_interface_protocol(dev_addr, instance);
-    DBG("HID using boot protocol, sub-protocol = %s\r\n", protocol_str[itf_protocol]);
+    DBG("HID using boot protocol, sub-protocol = %s (%d)\r\n", protocol_str[itf_protocol], itf_protocol);
   } else if (proto == HID_PROTOCOL_REPORT) {
     DBG("HID using report protocol\r\n");
   }
@@ -72,20 +72,15 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
 {
   uint8_t const itf_protocol = tuh_hid_interface_protocol(dev_addr, instance);
 
-  switch (itf_protocol)
-  {
-    case HID_ITF_PROTOCOL_KEYBOARD:
+  //DBG("HID report (dev %d:%d, proto %d) length %d\n", dev_addr, instance, itf_protocol, len);
+
+  if (itf_protocol == HID_ITF_PROTOCOL_KEYBOARD) {
       translate_boot_kbd_report((hid_keyboard_report_t const*) report);
-    break;
-
-    case HID_ITF_PROTOCOL_MOUSE:
-      translate_boot_mouse_report((hid_mouse_report_t const*) report);
-    break;
-
-    default:
+  } else if (itf_protocol == HID_ITF_PROTOCOL_MOUSE) {
+      //translate_boot_mouse_report((hid_mouse_report_t const*) report);
+  } else {
       // Generic report requires matching ReportID and contents with previous parsed report info
       process_generic_report(dev_addr, instance, report, len);
-    break;
   }
 
   // Continue to request to receive a report

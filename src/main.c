@@ -55,6 +55,7 @@ int main(void)
   sleep_ms(10);
 
   DEBUG_INIT();
+  DBG("==== B A B E L F I S H ====\n");
 
   mutex_init(&event_queue_mutex);
 
@@ -82,10 +83,8 @@ void mainloop(void)
   uint mouse_event_count = 0;
 
   while (true) {
-    mutex_enter_blocking(&event_queue_mutex);
     get_queued_kbd_events(kbd_events, &kbd_event_count);
     get_queued_mouse_events(mouse_events, &mouse_event_count);
-    mutex_exit(&event_queue_mutex);
 
     for (uint i = 0; i < kbd_event_count; i++) {
       host->kbd_event(kbd_events[i]);
@@ -126,6 +125,7 @@ void core1_main(void)
 
 void enqueue_kbd_event(const KeyboardEvent* event)
 {
+  DBG("Enqueued key %s: [%d] 0x%04x\n", event->down ? "DOWN" : "UP", event->page, event->keycode);
   mutex_enter_blocking(&event_queue_mutex);
   if (kbd_event_queue_count < MAX_QUEUED_EVENTS) {
     kbd_event_queue[kbd_event_queue_count++] = *event;
@@ -135,6 +135,7 @@ void enqueue_kbd_event(const KeyboardEvent* event)
 
 void enqueue_mouse_event(const MouseEvent* event)
 {
+  //DBG("Enqueued mouse\n");
   mutex_enter_blocking(&event_queue_mutex);
   if (mouse_event_queue_count < MAX_QUEUED_EVENTS) {
     mouse_event_queue[mouse_event_queue_count++] = *event;

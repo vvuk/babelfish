@@ -2,32 +2,59 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Babelfish Test",
+            "name": "Run: Babelfish",
             "type": "cortex-debug",
             "request": "launch",
             "cwd": "${workspaceRoot}",
-            "executable": "build/babelfish_test.elf",
-            "svdFile": "/opt/UnitySrc/proj/pico-sdk/src/rp2040/hardware_regs/rp2040.svd",
-            //"servertype": "openocd",
-            "servertype": "bmp",
-            "BMPGDBSerialPort": "192.168.7.108:2345",
-            "gdbPath" : "arm-none-eabi-gdb",
+            "executable": "build/babelfish.elf",
+            "svdFile": "/home/vladimir/proj/pico-sdk/src/rp2040/hardware_regs/rp2040.svd",
+            //"svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
+            "servertype": "openocd",
+            //"servertype": "bmp",
+            //"BMPGDBSerialPort": "192.168.7.108:2345",
+            //"gdbPath" : "arm-none-eabi-gdb",
+            "gdbPath" : "gdb-multiarch",
             "interface": "swd",
             "device": "RP2040",
-            "targetId": "1",
+            //"targetId": "1",
             "showDevDebugOutput": "none",
-            //"configFiles": [
+            "configFiles": [
                 //"openocd.cfg",
-                //"interface/cmsis-dap.cfg",
-                //"target/rp2040.cfg"
-            //],
-            //"svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
+                "interface/cmsis-dap.cfg",
+                "target/rp2040.cfg"
+            ],
             "runToEntryPoint": "main",
+            // PICO_NO_FLASH=1
+            //"overrideLaunchCommands": [
+            //    "monitor reset init",
+            //    "load ${command:cmake.launchTargetPath}"
+            //],
+            // without pico no flash
+            //"preLaunchTask": "Flash",
             // Work around for stopping at main on restart
             //"postRestartCommands": [
             //    "break main",
             //    "continue"
             //]
+        },
+        {
+            "name": "Attach: Babelfish",
+            "type": "cortex-debug",
+            "request": "attach",
+            "cwd": "${workspaceRoot}",
+            "executable": "build/babelfish.elf",
+            "svdFile": "/home/vladimir/proj/pico-sdk/src/rp2040/hardware_regs/rp2040.svd",
+            "servertype": "openocd",
+            "gdbPath" : "gdb-multiarch",
+            "interface": "swd",
+            "device": "RP2040",
+            "showDevDebugOutput": "none",
+            "configFiles": [
+                //"openocd.cfg",
+                "interface/cmsis-dap.cfg",
+                "target/rp2040.cfg"
+            ],
+            //"preLaunchTask": "Flash",
         }
     ]
 }

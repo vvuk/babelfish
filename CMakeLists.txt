@@ -8,6 +8,8 @@ project(babelfish C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+#set(PICO_NO_FLASH 1)
+
 # set global define USBH_DEBUG=2
 add_compile_definitions(USBH_DEBUG=2)
 
@@ -37,15 +39,14 @@ target_link_libraries(babelfish PUBLIC
   tinyusb_pico_pio_usb)
 
 # enable usb output, disable uart output
-pico_enable_stdio_usb(babelfish 1)
-pico_enable_stdio_uart(babelfish 0)
-
-target_compile_definitions(babelfish PRIVATE
-  DEBUG
-)
-
 pico_enable_stdio_usb(babelfish 0)
-pico_enable_stdio_uart(babelfish 0)
+pico_enable_stdio_uart(babelfish 1)
+
+target_compile_definitions(babelfish PUBLIC
+  DEBUG
+  PICO_DEFAULT_UART_TX_PIN=0
+  PICO_DEFAULT_UART_RX_PIN=1
+)
 
 pico_add_extra_outputs(babelfish)
 
