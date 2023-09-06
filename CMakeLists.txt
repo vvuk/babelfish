@@ -28,14 +28,22 @@ add_executable(babelfish
   src/host_apollo.c
   src/output.c
   src/debug.c
+
+  new_stdio_usb/stdio_usb.c
+  new_stdio_usb/stdio_usb_descriptors.c
 )
+
 target_include_directories(babelfish PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/src)
+  ${CMAKE_CURRENT_LIST_DIR}/src
+  ${CMAKE_CURRENT_LIST_DIR}/new_stdio_usb/include)
+
 target_link_libraries(babelfish PUBLIC
   pico_stdlib
   pico_sync
   pico_multicore
+  pico_unique_id
   tinyusb_host
+  tinyusb_device_unmarked  # special _unmarked because we've got our usb hack
   tinyusb_pico_pio_usb)
 
 # enable usb output, disable uart output
@@ -50,6 +58,7 @@ target_compile_definitions(babelfish PUBLIC
 
 pico_add_extra_outputs(babelfish)
 
+if (FALSE)
 add_executable(babelfish_test
   src/babelfish_test.c
 )
@@ -71,3 +80,4 @@ pico_enable_stdio_usb(babelfish_test 0)
 pico_enable_stdio_uart(babelfish_test 0)
 
 pico_add_extra_outputs(babelfish_test)
+endif()

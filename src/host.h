@@ -34,6 +34,12 @@ typedef struct {
     uint8_t buttons_current;
 } MouseEvent;
 
+typedef enum {
+    // Don't call kbd/mouse event functions,
+    // the host will do its own pumping
+    HostFlagDontPumpEvents = 1 << 0,
+} HostFlags;
+
 typedef struct {
     char name[16];
     void (*init)();

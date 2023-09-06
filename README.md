@@ -10,6 +10,8 @@ Planned or in progress emulations include:
 * Apollo Keyboard (for use with Domain/OS)
 * SGI (pre-PS2)
 * Sun (pre-PS2)
+* Mac ADB
+* PS/2 ?
 
 The Sun code is based on the (USB2Sun)[] project.
 

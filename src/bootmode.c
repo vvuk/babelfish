@@ -2,6 +2,7 @@
 #include "host.h"
 #include "hid_codes.h"
 
+#define DEBUG_VERBOSE 0
 #define DEBUG_TAG "bootmode"
 #include "debug.h"
 
