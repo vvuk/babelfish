@@ -133,6 +133,7 @@ translate_boot_mouse_report(hid_mouse_report_t const *report)
     event.dwheel = report->wheel;
     event.buttons_down = changed_buttons & current_buttons_state;
     event.buttons_up = changed_buttons & ~current_buttons_state;
+	event.buttons = report->buttons;
 
     buttons_down = current_buttons_state;
 

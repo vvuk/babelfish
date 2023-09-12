@@ -77,7 +77,7 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
   if (itf_protocol == HID_ITF_PROTOCOL_KEYBOARD) {
       translate_boot_kbd_report((hid_keyboard_report_t const*) report);
   } else if (itf_protocol == HID_ITF_PROTOCOL_MOUSE) {
-      //translate_boot_mouse_report((hid_mouse_report_t const*) report);
+      translate_boot_mouse_report((hid_mouse_report_t const*) report);
   } else {
       // Generic report requires matching ReportID and contents with previous parsed report info
       process_generic_report(dev_addr, instance, report, len);

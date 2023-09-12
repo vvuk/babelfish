@@ -31,7 +31,7 @@ typedef struct {
     uint8_t buttons_up;
 
     // current buttons
-    uint8_t buttons_current;
+    uint8_t buttons;
 } MouseEvent;
 
 typedef enum {

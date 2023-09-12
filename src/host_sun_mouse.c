@@ -69,9 +69,9 @@ void sun_mouse_tx() {
 }
 
 void sun_mouse_event(const MouseEvent event) {
-  btns = ((event.buttons_current & MOUSE_BUTTON_LEFT)   ? 0 : 4)
-      | ((event.buttons_current & MOUSE_BUTTON_MIDDLE) ? 0 : 2)
-      | ((event.buttons_current & MOUSE_BUTTON_RIGHT)  ? 0 : 1)
+  btns = ((event.buttons & MOUSE_BUTTON_LEFT)   ? 0 : 4)
+      | ((event.buttons & MOUSE_BUTTON_MIDDLE) ? 0 : 2)
+      | ((event.buttons & MOUSE_BUTTON_RIGHT)  ? 0 : 1)
   ;
   delta_x += event.dx;
   delta_y += -event.dy;

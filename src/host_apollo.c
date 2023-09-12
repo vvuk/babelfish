@@ -11,6 +11,18 @@
 #define DEBUG_TAG "apollo"
 #include "debug.h"
 
+/**********************
+
+From reading domain_os disassembly, the host to keyboard protocol looks like this:
+
+- Commands start with 0xff.
+- Bytes are read after 0xff until a valid command is received.
+- It is immediately processed.
+- 0x00 outside of preceiding 0xff is ignored.
+
+
+***********************/
+
 typedef enum {
     Mode0_Compatibility = 0,
     Mode1_Keystate = 1,
@@ -27,8 +39,7 @@ typedef enum {
     StateMax
 } KeyState;
 
-//static KeyboardMode kbd_mode = Mode0_Compatibility;
-static KeyboardMode kbd_mode = Mode1_Keystate;
+static KeyboardMode kbd_mode = Mode0_Compatibility;
 
 #define UART_KEYBOARD_NUM 1
 #define UART_KEYBOARD_ID uart1
@@ -42,14 +53,41 @@ static void on_keyboard_rx();
 // [State] = KeyState
 static uint16_t s_code_table[2][256][StateMax];
 
+static void kbd_xmit_uart(char c) {
+	uart_putc_raw(UART_KEYBOARD_ID, c);
+}
+
 static void kbd_xmit_key(char c) {
 	DBG_VV("xmit for key %02x\n", c);
-	uart_putc_raw(UART_KEYBOARD_ID, c);
+	kbd_xmit_uart(c);
 }
 
 static void kbd_xmit(char c) {
 	DBG_VV("xmit %02x\n", c);
-	uart_putc_raw(UART_KEYBOARD_ID, c);
+	kbd_xmit_uart(c);
+}
+
+static void kbd_tx_str(const char *str) {
+	DBG_VV("xmit str '%s'\n", str);
+	while (*str) {
+		kbd_xmit_uart(*str++);
+	}
+}
+
+// these are just convenience for logging to avoid spamming
+static void kbd_xmit_2(char a, char b) {
+	DBG_VV("xmit %02x %02x\n", a, b);
+	kbd_xmit_uart(a); kbd_xmit_uart(b);
+}
+
+static void kbd_xmit_3(char a, char b, char c) {
+	DBG_VV("xmit %02x %02x %02x\n", a, b, c);
+	kbd_xmit_uart(a); kbd_xmit_uart(b); kbd_xmit_uart(c);
+}
+
+static void kbd_xmit_4(char a, char b, char c, char d) {
+	DBG_VV("xmit %02x %02x %02x %02x\n", a, b, c, d);
+	kbd_xmit_uart(a); kbd_xmit_uart(b); kbd_xmit_uart(c); kbd_xmit_uart(d);
 }
 
 static void force_set_mode(KeyboardMode mode) {
@@ -85,13 +123,13 @@ void apollo_init() {
 
 	uart_set_irq_enables(UART_KEYBOARD_ID, true, false);
 
-	kbd_xmit(0xff);
-	//kbd_xmit(0);
-	kbd_xmit(0);
-	kbd_xmit(0);
+	kbd_xmit_3(0xff, 0, 0);
 }
 
+static void check_mouse_xmit();
+
 void apollo_update() {
+	check_mouse_xmit();
 }
 
 void apollo_kbd_event(const KeyboardEvent event) {
@@ -109,16 +147,24 @@ void apollo_kbd_event(const KeyboardEvent event) {
 	// hacks for testing
 		switch (event.keycode) {
 			case HID_KEY_F1:
+				set_mode(Mode1_Keystate);
+				return;
+
+			case HID_KEY_F2:
+				set_mode(Mode2_RelativeCursorControl);
+				return;
+
+			case HID_KEY_F3:
 				if (!event.down) return;
 				kbd_xmit(0xff);
 				return;
 
-			case HID_KEY_F2:
+			case HID_KEY_F4:
 				if (!event.down) return;
 				kbd_xmit(0x00);
 				return;
 			
-			case HID_KEY_F3:
+			case HID_KEY_F5:
 				if (!event.down) return;
 				kbd_xmit(0x00);
 				kbd_xmit(0x00);
@@ -126,12 +172,6 @@ void apollo_kbd_event(const KeyboardEvent event) {
 				kbd_xmit(0x10);
 				kbd_xmit(0x04);
 				kbd_xmit(0x5e);
-				return;
-			
-			case HID_KEY_F4:
-				if (!event.down) return;
-				kbd_xmit(0xff);
-				kbd_xmit(0x01);
 				return;
 		}
 
@@ -184,7 +224,50 @@ void apollo_kbd_event(const KeyboardEvent event) {
 	kbd_xmit_key(code);
 }
 
+// report mouse at most 1000/200 times per second
+#define MOUSE_RATE_MS 100
+#define SPEED_DIV 2
+
+static int mouse_cdx = 0;
+static int mouse_cdy = 0;
+static int mouse_cbtn = 0;
+static int mouse_lbtn = 0;
+static uint32_t mouse_last_report = 0;
+
+void check_mouse_xmit() {
+	if (mouse_cdx == 0 && mouse_cdy == 0 && mouse_cbtn == mouse_lbtn)
+		return;
+
+	uint32_t now_ms = to_ms_since_boot(get_absolute_time());
+	if (now_ms - mouse_last_report >= MOUSE_RATE_MS || mouse_cbtn != mouse_lbtn) {
+		set_mode(Mode2_RelativeCursorControl);
+
+		DBG_V("mouse xmit: cdx %d cdy %d btn %d\n", mouse_cdx, mouse_cdy, mouse_cbtn);
+
+		// slow down
+		int cdx = mouse_cdx / SPEED_DIV;
+		int cdy = mouse_cdy / SPEED_DIV;
+
+		// clamp
+		int8_t tdx = cdx > 127 ? 127 : cdx < -127 ? -127 : cdx;
+		int8_t tdy = cdy > 127 ? 127 : cdy < -127 ? -127 : cdy;
+
+		DBG_V("mouse xmit: tdx %d tdy %d\n", tdx, tdy);
+
+		kbd_xmit_3(
+			0xf0 ^ (mouse_cbtn << 4),
+			tdx,
+			-tdy); // apollo Y is inverse
+
+		mouse_cdx = 0;
+		mouse_cdy = 0;
+		mouse_lbtn = mouse_cbtn;
+		mouse_last_report = now_ms;
+	}
+}
+
 void apollo_mouse_event(const MouseEvent event) {
+
 	if (kbd_mode == Mode0_Compatibility) {
 		// don't report mouse status in mode 0
 		// there's something about sending the same report prefixed with a 0xdf in
@@ -192,17 +275,9 @@ void apollo_mouse_event(const MouseEvent event) {
 		return;
 	}
 
-	set_mode(Mode2_RelativeCursorControl);
-
-	kbd_xmit(0xf0 ^ event.buttons_current);
-	kbd_xmit(event.dx);
-	kbd_xmit(event.dy);
-}
-
-static void kbd_tx_str(const char *str) {
-	while (*str) {
-		kbd_xmit(*str++);
-	}
+	mouse_cdx += event.dx;
+	mouse_cdy += event.dy;
+	mouse_cbtn = event.buttons;
 }
 
 //
@@ -230,9 +305,7 @@ void on_keyboard_rx() {
                 kbd_cmd = 0;
                 kbd_cmd_bytes = 0;
 			} else if (ch == 0x00) {
-				// this is some kind of attention signal -- we're just going to ignore it
-			//} else if (ch == 0x80) {
-			//	// I've never actually seen this as a start
+				// 0x00 outside of 0xff sequence -- just ignore
             } else {
                 DBG("Unknown command start byte: %02x\n", ch);
             }
@@ -251,19 +324,20 @@ void on_keyboard_rx() {
 
         DBG(" command %08lx (%d bytes)\n", kbd_cmd, kbd_cmd_bytes);
 
-        bool cmd_handled = false;
+        bool cmd_handled = true;
 
 		if (kbd_cmd_bytes == 1) {
 			switch (kbd_cmd) {
 				case 0x00:
 					force_mode_xmit(Mode0_Compatibility);
-					cmd_handled = true;
 					break;
 				
 				case 0x01:
 					force_mode_xmit(Mode1_Keystate);
-					cmd_handled = true;
 					break;
+				
+				default:
+					cmd_handled = false;
 			}
 		} else if (kbd_cmd_bytes == 2) {
 			switch (kbd_cmd) {
@@ -280,14 +354,12 @@ void on_keyboard_rx() {
 					//	force_mode_xmit(Mode1_Keystate);
 					//}
 
-					cmd_handled = true;
 					break;
 
 				case 0x2181: // beeper on for 300ms
 				case 0x2182: // beeper off
 					//kbd_xmit(ch);
 				    // we would have echoed all this back, did we want to?
-					cmd_handled = true;
 					break;
 
 				case 0x1116: // unclear?
@@ -295,31 +367,34 @@ void on_keyboard_rx() {
 					// mame does _not_ echo the 0x16 back before sending 0x00 0xff 0x00
 					///force_mode_xmit(Mode0_Compatibility);
 					///force_mode_xmit(Mode0_Compatibility);
-					cmd_handled = true;
 					break;
 
 				case 0x1166: // unknown
-					cmd_handled = true;
 					break;
 
 				case 0x1117: // unknown // this shows up at boot?
 					// we would have echoed back an extra 0x17
 					// mame does _not_ echo the 0x17 back
-					cmd_handled = true;
 					break;
 				
 				//case 0x1004: // maybe mouse enable?
 					//kbd_xmit(0xff);
 					//kbd_xmit(0x5e);
-					//cmd_handled = true;
 					//break;
+
+				default:
+					cmd_handled = false;
 			}
 		} else if (kbd_cmd_bytes == 3) {
 			switch (kbd_cmd) {
 				case 0x10045e: // copilot thinks this is "mouse enable"?
-					cmd_handled = true;
 					break;
+
+				default:
+					cmd_handled = false;
 			}
+		} else {
+			cmd_handled = false;
 		}
 
 		// the PC sends 0xff1004 and then waits forever until

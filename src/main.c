@@ -56,7 +56,7 @@ int main(void)
 
   stdio_usb_init();
   stdio_init_all();
-  sleep_ms(10);
+  sleep_ms(100);
 
   DEBUG_INIT();
   DBG("==== B A B E L F I S H ====\n");
