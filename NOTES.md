@@ -2,6 +2,24 @@ Babelfish
 =========
 # Active notes
 
+TPMCP1703T-5002E/CB -- SOT-23-3 20V max input, 300mA max current. How will this play with 357mA current limit on TPS2113? And will this be enough to power USB and RP2040?
+TPMCP1703T-3302E/CB - SOT-23-3 
+
+
+DE9 connector. Female.
+
+5   4   3   2   1
+  9   8   7   6
+
+1 - GND
+2 - RX A
+3 - TX A
+4 - 
+5 - 
+6 - VCC
+7 - RX B
+8 - TX B
+9
 
 # Legacy notes
 ## v01
