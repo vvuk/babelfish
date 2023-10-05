@@ -11,12 +11,12 @@
 
 #define CFG_TUSB_OS               OPT_OS_PICO
 
-//#define CFG_TUD_ENABLED     1
+#define CFG_TUD_ENABLED     1
 
 // Enable host stack with pio-usb if Pico-PIO-USB library is available
 #define CFG_TUH_ENABLED     1
 #define CFG_TUH_RPI_PIO_USB 1
-#define BOARD_TUH_RHPORT    1
+//#define BOARD_TUH_RHPORT    1
 
 // CFG_TUSB_DEBUG is defined by compiler in DEBUG build
 // #define CFG_TUSB_DEBUG           0
@@ -44,8 +44,10 @@
 #define CFG_TUD_ENDPOINT0_SIZE    64
 #endif
 
+#define CFG_TUSB_RHPORT0_MODE (OPT_MODE_DEVICE)
 //------------- CLASS -------------//
-#define CFG_TUD_CDC              0
+#define CFG_TUD_CDC              1
+#define CFG_TUD_VENDOR 0
 
 // CDC FIFO size of TX and RX
 #define CFG_TUD_CDC_RX_BUFSIZE   256

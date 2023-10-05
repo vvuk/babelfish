@@ -1,4 +1,6 @@
 #include <pico/stdlib.h>
+#include <pico/stdio.h>
+#include <pico/stdio_uart.h>
 #include <hardware/uart.h>
 #include <hardware/irq.h>
 #include <stdarg.h>
@@ -13,6 +15,13 @@
 static uint8_t const ascii_to_hid[128][2] = { HID_ASCII_TO_KEYCODE };
 
 static void debug_chars_available(void*);
+
+void
+debug_init()
+{
+    stdio_set_translate_crlf(&stdio_uart, true);
+    //stdio_set_chars_available_callback(debug_chars_available, NULL);
+}
 
 static void
 debug_xmit_char(char ch)
@@ -102,12 +111,6 @@ process_char:
 }
 
 void
-debug_init()
-{
-    stdio_set_chars_available_callback(debug_chars_available, NULL);
-}
-
-void
 debug_chars_available(void* param)
 {
     int ch;
@@ -125,10 +128,11 @@ dbg(const char* tag, const char *fmt, ...)
     vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
 
-    puts("(");
-    puts(tag);
-    puts(") ");
-    puts(buf);
+    if (tag) {
+        printf("(%s:%d) %s", tag, get_core_num(), buf);
+    } else {
+        printf("%s", buf);
+    }
 }
 
 // The below is straight direct UART debugging.

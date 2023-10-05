@@ -13,11 +13,14 @@
 #include <tusb.h>
 #include <pio_usb.h>
 
+#define DEBUG_VERBOSE 0
 #define DEBUG_TAG "main"
+#include "debug.h"
 
 #include "host.h"
-#include "debug.h"
 #include "babelfish.h"
+
+#include <pico/stdio_usb.h>
 
 #define USB_ON_CORE1 1
 
@@ -51,10 +54,12 @@ int main(void)
   // need 120MHz for USB
   set_sys_clock_khz(120000, true);
 
+  stdio_usb_init();
   stdio_init_all();
-  sleep_ms(10);
+  sleep_ms(100);
 
   DEBUG_INIT();
+  DBG("==== B A B E L F I S H ====\n");
 
   mutex_init(&event_queue_mutex);
 
@@ -82,12 +87,11 @@ void mainloop(void)
   uint mouse_event_count = 0;
 
   while (true) {
-    mutex_enter_blocking(&event_queue_mutex);
     get_queued_kbd_events(kbd_events, &kbd_event_count);
     get_queued_mouse_events(mouse_events, &mouse_event_count);
-    mutex_exit(&event_queue_mutex);
 
     for (uint i = 0; i < kbd_event_count; i++) {
+      DBG_V("xmit key %s: [%d] 0x%04x\n", kbd_events[i].down ? "DOWN" : "UP", kbd_events[i].page, kbd_events[i].keycode);
       host->kbd_event(kbd_events[i]);
     }
 
@@ -96,6 +100,8 @@ void mainloop(void)
     }
 
     host->update();
+
+    tud_task();
   }
 }
 
@@ -126,6 +132,7 @@ void core1_main(void)
 
 void enqueue_kbd_event(const KeyboardEvent* event)
 {
+  //DBG_VV("Enqueued key %s: [%d] 0x%04x\n", event->down ? "DOWN" : "UP", event->page, event->keycode);
   mutex_enter_blocking(&event_queue_mutex);
   if (kbd_event_queue_count < MAX_QUEUED_EVENTS) {
     kbd_event_queue[kbd_event_queue_count++] = *event;
@@ -135,6 +142,7 @@ void enqueue_kbd_event(const KeyboardEvent* event)
 
 void enqueue_mouse_event(const MouseEvent* event)
 {
+  //DBG("Enqueued mouse\n");
   mutex_enter_blocking(&event_queue_mutex);
   if (mouse_event_queue_count < MAX_QUEUED_EVENTS) {
     mouse_event_queue[mouse_event_queue_count++] = *event;

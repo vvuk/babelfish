@@ -4,10 +4,24 @@
 #include <tusb.h>
 
 #include "host.h"
+#include "babelfish.h"
 #include "hid_codes.h"
 
+#define DEBUG_VERBOSE 2
 #define DEBUG_TAG "apollo"
 #include "debug.h"
+
+/**********************
+
+From reading domain_os disassembly, the host to keyboard protocol looks like this:
+
+- Commands start with 0xff.
+- Bytes are read after 0xff until a valid command is received.
+- It is immediately processed.
+- 0x00 outside of preceiding 0xff is ignored.
+
+
+***********************/
 
 typedef enum {
     Mode0_Compatibility = 0,
@@ -39,11 +53,49 @@ static void on_keyboard_rx();
 // [State] = KeyState
 static uint16_t s_code_table[2][256][StateMax];
 
-static void kbd_xmit(char c) {
+static void kbd_xmit_uart(char c) {
 	uart_putc_raw(UART_KEYBOARD_ID, c);
 }
 
-static void force_mode(KeyboardMode mode) {
+static void kbd_xmit_key(char c) {
+	DBG_VV("xmit for key %02x\n", c);
+	kbd_xmit_uart(c);
+}
+
+static void kbd_xmit(char c) {
+	DBG_VV("xmit %02x\n", c);
+	kbd_xmit_uart(c);
+}
+
+static void kbd_tx_str(const char *str) {
+	DBG_VV("xmit str '%s'\n", str);
+	while (*str) {
+		kbd_xmit_uart(*str++);
+	}
+}
+
+// these are just convenience for logging to avoid spamming
+static void kbd_xmit_2(char a, char b) {
+	DBG_VV("xmit %02x %02x\n", a, b);
+	kbd_xmit_uart(a); kbd_xmit_uart(b);
+}
+
+static void kbd_xmit_3(char a, char b, char c) {
+	DBG_VV("xmit %02x %02x %02x\n", a, b, c);
+	kbd_xmit_uart(a); kbd_xmit_uart(b); kbd_xmit_uart(c);
+}
+
+static void kbd_xmit_4(char a, char b, char c, char d) {
+	DBG_VV("xmit %02x %02x %02x %02x\n", a, b, c, d);
+	kbd_xmit_uart(a); kbd_xmit_uart(b); kbd_xmit_uart(c); kbd_xmit_uart(d);
+}
+
+static void force_set_mode(KeyboardMode mode) {
+	DBG("Setting keyboard mode to %d (no xmit)\n", mode);
+	kbd_mode = mode;
+}
+
+static void force_mode_xmit(KeyboardMode mode) {
 	DBG("Setting keyboard mode to %d\n", mode);
 	kbd_xmit(0xff);
 	kbd_xmit((char) mode);
@@ -52,7 +104,7 @@ static void force_mode(KeyboardMode mode) {
 
 static void set_mode(KeyboardMode mode) {
 	if (kbd_mode != mode) {
-		force_mode(mode);
+		force_mode_xmit(mode);
 	}
 }
 
@@ -70,12 +122,19 @@ void apollo_init() {
 	irq_set_enabled(UART_KEYBOARD_IRQ, true);
 
 	uart_set_irq_enables(UART_KEYBOARD_ID, true, false);
+
+	kbd_xmit_3(0xff, 0, 0);
 }
 
+static void check_mouse_xmit();
+
 void apollo_update() {
+	check_mouse_xmit();
 }
 
 void apollo_kbd_event(const KeyboardEvent event) {
+	//DBG_V("got usb %02x %s\n", event.keycode, event.down ? "DOWN" : "UP");
+
 	// current state of things, for kbd mode 0
 	static bool ctrl = false;
 	static bool shift = false;
@@ -84,6 +143,37 @@ void apollo_kbd_event(const KeyboardEvent event) {
 	// the windows key or right-alt, which we'll use to trigger
 	// a number of the extra Apollo keys
 	static bool gui = false;
+
+	// hacks for testing
+		switch (event.keycode) {
+			case HID_KEY_F1:
+				set_mode(Mode1_Keystate);
+				return;
+
+			case HID_KEY_F2:
+				set_mode(Mode2_RelativeCursorControl);
+				return;
+
+			case HID_KEY_F3:
+				if (!event.down) return;
+				kbd_xmit(0xff);
+				return;
+
+			case HID_KEY_F4:
+				if (!event.down) return;
+				kbd_xmit(0x00);
+				return;
+			
+			case HID_KEY_F5:
+				if (!event.down) return;
+				kbd_xmit(0x00);
+				kbd_xmit(0x00);
+				kbd_xmit(0xff);
+				kbd_xmit(0x10);
+				kbd_xmit(0x04);
+				kbd_xmit(0x5e);
+				return;
+		}
 
 	// record state of host-mod gui (windows) key
 	if (EVENT_IS_HOST_MOD(event)) {
@@ -109,6 +199,10 @@ void apollo_kbd_event(const KeyboardEvent event) {
 				break;
 		}
 
+		// Mode0 doesn't report down/up; so we only care about the down for non-modifiers
+		if (!event.down)
+			return;
+
 		uint16_t code;
 
 		if (ctrl)
@@ -120,17 +214,60 @@ void apollo_kbd_event(const KeyboardEvent event) {
 		
 		//DBG("Mode0: Translating %02x to %04x (%s %s)\n", hidcode, code, ctrl ? "ctrl" : "", shift ? "shift" : "");
 		if (code != 0) {
-			kbd_xmit(code);
+			kbd_xmit_key(code);
 		}
 
 		return;
 	}
 
 	uint16_t code = s_code_table[gui][event.keycode][event.down ? State_Down : State_Up];
-	kbd_xmit(code);
+	kbd_xmit_key(code);
+}
+
+// report mouse at most 1000/200 times per second
+#define MOUSE_RATE_MS 100
+#define SPEED_DIV 2
+
+static int mouse_cdx = 0;
+static int mouse_cdy = 0;
+static int mouse_cbtn = 0;
+static int mouse_lbtn = 0;
+static uint32_t mouse_last_report = 0;
+
+void check_mouse_xmit() {
+	if (mouse_cdx == 0 && mouse_cdy == 0 && mouse_cbtn == mouse_lbtn)
+		return;
+
+	uint32_t now_ms = to_ms_since_boot(get_absolute_time());
+	if (now_ms - mouse_last_report >= MOUSE_RATE_MS || mouse_cbtn != mouse_lbtn) {
+		set_mode(Mode2_RelativeCursorControl);
+
+		DBG_V("mouse xmit: cdx %d cdy %d btn %d\n", mouse_cdx, mouse_cdy, mouse_cbtn);
+
+		// slow down
+		int cdx = mouse_cdx / SPEED_DIV;
+		int cdy = mouse_cdy / SPEED_DIV;
+
+		// clamp
+		int8_t tdx = cdx > 127 ? 127 : cdx < -127 ? -127 : cdx;
+		int8_t tdy = cdy > 127 ? 127 : cdy < -127 ? -127 : cdy;
+
+		DBG_V("mouse xmit: tdx %d tdy %d\n", tdx, tdy);
+
+		kbd_xmit_3(
+			0xf0 ^ (mouse_cbtn << 4),
+			tdx,
+			-tdy); // apollo Y is inverse
+
+		mouse_cdx = 0;
+		mouse_cdy = 0;
+		mouse_lbtn = mouse_cbtn;
+		mouse_last_report = now_ms;
+	}
 }
 
 void apollo_mouse_event(const MouseEvent event) {
+
 	if (kbd_mode == Mode0_Compatibility) {
 		// don't report mouse status in mode 0
 		// there's something about sending the same report prefixed with a 0xdf in
@@ -138,18 +275,17 @@ void apollo_mouse_event(const MouseEvent event) {
 		return;
 	}
 
-	set_mode(Mode2_RelativeCursorControl);
-
-	kbd_xmit(0xf0 ^ event.buttons_current);
-	kbd_xmit(event.dx);
-	kbd_xmit(event.dy);
+	mouse_cdx += event.dx;
+	mouse_cdy += event.dy;
+	mouse_cbtn = event.buttons;
 }
 
-static void kbd_tx_str(const char *str) {
-	while (*str) {
-		kbd_xmit(*str++);
-	}
-}
+//
+// mame weirdness:
+// rx: 0xff  -> tx: 0xff, loopback = 1
+// rx: 0x00  -> if loopback, set mode0 (0xff, 0x00), loopback= off
+// rx: 0x11  -> sees data as 0xff11, puts 0x11
+// rx: 0x17  -> does nothing, clears message
 
 void on_keyboard_rx() {
     static uint32_t kbd_cmd = 0;
@@ -160,86 +296,110 @@ void on_keyboard_rx() {
     while (uart_is_readable(UART_KEYBOARD_ID)) {
         uint8_t ch = uart_getc(UART_KEYBOARD_ID);
 
+		DBG_VV("recv %02x\n", ch);
+
         if (!kbd_reading_cmd) {
-			if (ch == 0x00) {
-				// ignore
-			} else if (ch == 0xff) {
+			if (ch == 0xff) {
+				///kbd_xmit(0xff); // mame
                 kbd_reading_cmd = true;
                 kbd_cmd = 0;
                 kbd_cmd_bytes = 0;
+			} else if (ch == 0x00) {
+				// 0x00 outside of 0xff sequence -- just ignore
             } else {
                 DBG("Unknown command start byte: %02x\n", ch);
-				continue;
             }
-        } else {
-			if (kbd_cmd_bytes == 4) {
-				DBG("Too-long keyboard command: currently %08lx, got %02x\n", kbd_cmd, ch);
-				kbd_reading_cmd = false;
-				continue;
-			}
-			kbd_cmd = (kbd_cmd << 8) | ch;
-			kbd_cmd_bytes++;
+
+			continue;
         }
+
+		if (kbd_cmd_bytes == 4) {
+			DBG("Too-long keyboard command: currently %08lx, got %02x\n", kbd_cmd, ch);
+			kbd_reading_cmd = false;
+			continue;
+		}
+
+		kbd_cmd = (kbd_cmd << 8) | ch;
+		kbd_cmd_bytes++;
 
         DBG(" command %08lx (%d bytes)\n", kbd_cmd, kbd_cmd_bytes);
 
-        bool cmd_handled = false;
+        bool cmd_handled = true;
 
 		if (kbd_cmd_bytes == 1) {
 			switch (kbd_cmd) {
 				case 0x00:
-					force_mode(Mode0_Compatibility);
-					cmd_handled = true;
+					force_mode_xmit(Mode0_Compatibility);
 					break;
 				
 				case 0x01:
-					force_mode(Mode1_Keystate);
-					cmd_handled = true;
+					force_mode_xmit(Mode1_Keystate);
 					break;
+				
+				default:
+					cmd_handled = false;
 			}
 		} else if (kbd_cmd_bytes == 2) {
 			switch (kbd_cmd) {
 				case 0x1221: // keyboard identification
 					DBG("keyboard ident request\n");
 
-					kbd_tx_str("\xff\x12\x21");
+					//kbd_tx_str("\xff\x12\x21"); // already sent as part of loopback
 					kbd_tx_str("3-@\r2-0\rSD-03863-MS\r"); // english ident
 					//kbd_tx_str("3-A\r2-0\rSD-03863-MS\r"); // german ident
 
-					if (kbd_mode == Mode0_Compatibility) {
-						force_mode(Mode0_Compatibility);
-					} else {
-						force_mode(Mode1_Keystate);
-					}
+					//if (kbd_mode == Mode0_Compatibility) {
+					//	force_mode_xmit(Mode0_Compatibility);
+					//} else {
+					//	force_mode_xmit(Mode1_Keystate);
+					//}
 
-					cmd_handled = true;
-					break;
-
-				case 0x1116: // unclear? mame sends back two mode0 forces
-					force_mode(Mode0_Compatibility);
-					force_mode(Mode0_Compatibility);
-					cmd_handled = true;
 					break;
 
 				case 0x2181: // beeper on for 300ms
 				case 0x2182: // beeper off
-					cmd_handled = true;
+					//kbd_xmit(ch);
+				    // we would have echoed all this back, did we want to?
+					break;
+
+				case 0x1116: // unclear?
+				    // we would have echoed back 0xff1116 at this point
+					// mame does _not_ echo the 0x16 back before sending 0x00 0xff 0x00
+					///force_mode_xmit(Mode0_Compatibility);
+					///force_mode_xmit(Mode0_Compatibility);
 					break;
 
 				case 0x1166: // unknown
-				case 0x1117: // unknown
-					cmd_handled = true;
 					break;
+
+				case 0x1117: // unknown // this shows up at boot?
+					// we would have echoed back an extra 0x17
+					// mame does _not_ echo the 0x17 back
+					break;
+				
+				//case 0x1004: // maybe mouse enable?
+					//kbd_xmit(0xff);
+					//kbd_xmit(0x5e);
+					//break;
+
+				default:
+					cmd_handled = false;
 			}
 		} else if (kbd_cmd_bytes == 3) {
 			switch (kbd_cmd) {
 				case 0x10045e: // copilot thinks this is "mouse enable"?
-					cmd_handled = true;
 					break;
+
+				default:
+					cmd_handled = false;
 			}
+		} else {
+			cmd_handled = false;
 		}
 
-		// after mouse, sometimes the keyboard sends 0xff10045e 00000000
+		// the PC sends 0xff1004 and then waits forever until
+		// it gets a valid reply. 0xff seems to be a reset.
+		// after mouse, sometimes the (pc?) sends 0xff10045e 00000000
 
 		if (cmd_handled) {
 			DBG(" command handled\n");
@@ -287,7 +447,7 @@ static uint16_t s_code_table[2][256][StateMax] = {
 		[HID_KEY_MINUS]                 = { 0x22, 0xA2, 0x2D, 0x5F, NONE },
 		[HID_KEY_EQUAL]                 = { 0x23, 0xA3, 0x3D, 0x2B, NONE },
 		[HID_KEY_GRAVE]                 = { 0x24, 0xA4, 0x60, 0x7E, 0x1E },
-		[HID_KEY_BACKSPACE]             = { 0x25, 0xA5, 0x5E, 0x5E, NONE },
+		[HID_KEY_BACKSPACE]             = { 0x25, 0xA5, 0xDE, 0xDE, NONE },
 
 		/* C1 .. C14 */
 		[HID_KEY_TAB]                   = { 0x2C, 0xAC, 0xCA, 0xDA, 0xFA },
@@ -296,14 +456,14 @@ static uint16_t s_code_table[2][256][StateMax] = {
 		[HID_KEY_E]                     = { 0x2F, 0xAF, 0x65, 0x45, 0x05 },
 		[HID_KEY_R]                     = { 0x30, 0xB0, 0x72, 0x52, 0x12 },
 		[HID_KEY_T]                     = { 0x31, 0xB1, 0x74, 0x54, 0x14 },
-		[HID_KEY_Y]                     = { 0x32, 0xB2, 0x59, 0x59, 0x19 },
+		[HID_KEY_Y]                     = { 0x32, 0xB2, 0x79, 0x59, 0x19 },
 		[HID_KEY_U]                     = { 0x33, 0xB3, 0x75, 0x55, 0x15 },
 		[HID_KEY_I]                     = { 0x34, 0xB4, 0x69, 0x49, 0x09 },
 		[HID_KEY_O]                     = { 0x35, 0xB5, 0x6F, 0x4F, 0x0F },
 		[HID_KEY_P]                     = { 0x36, 0xB6, 0x70, 0x50, 0x10 },
 		[HID_KEY_BRACKET_LEFT]          = { 0x37, 0xB7, 0x7B, 0x5B, 0x1B },
 		[HID_KEY_BRACKET_RIGHT]         = { 0x38, 0xB8, 0x7D, 0x5D, 0x1D },
-		[HID_KEY_DELETE]                = { 0x3A, 0xBA, 0x7F, 0x7F, NONE },
+		[HID_KEY_DELETE]                = { 0x3A, 0xBA, 0x7F, 0x7F, 0x7F },
 
 		/* D0 .. D14 */
 		[HID_KEY_LEFT_CONTROL]          = { 0x43, 0xC3, NONE, NONE, NONE },
@@ -319,13 +479,13 @@ static uint16_t s_code_table[2][256][StateMax] = {
 		[HID_KEY_L]                     = { 0x4E, 0xCE, 0x6C, 0x4C, 0x0C },
 		[HID_KEY_SEMICOLON]             = { 0x4F, 0xCF, 0x3B, 0x3A, 0xFB },
 		[HID_KEY_APOSTROPHE]            = { 0x50, 0xD0, 0x27, 0x22, 0xF8 },
-		[HID_KEY_ENTER]                 = { 0x52, 0xD2, 0x0D, NONE, NONE },
+		[HID_KEY_ENTER]                 = { 0x52, 0xD2, 0x0D, 0x0D, 0x0D },
 		[HID_KEY_BACKSLASH]             = { 0x53, 0xD3, 0xC8, 0xC9, NONE },
 
 		/* E0 .. E13 */
 		/* E0 = REPT - Apollo specific */
 		[HID_KEY_LEFT_SHIFT]            = { 0x5E, 0xDE, NONE, NONE, NONE },
-		[HID_KEY_Z]                     = { 0x60, 0xE0, 0x5A, 0x5A, 0x1A },
+		[HID_KEY_Z]                     = { 0x60, 0xE0, 0x7A, 0x5A, 0x1A },
 		[HID_KEY_X]                     = { 0x61, 0xE1, 0x78, 0x58, 0x18 },
 		[HID_KEY_C]                     = { 0x62, 0xE2, 0x63, 0x43, 0x03 },
 		[HID_KEY_V]                     = { 0x63, 0xE3, 0x76, 0x56, 0x16 },

@@ -4,15 +4,19 @@
 
 #include "host.h"
 
-#define DEBUG_TAG "apollo"
+#define DEBUG_TAG "adb"
 #include "debug.h"
+#include "babelfish.h"
 
 /*
  * NOTES:
  *
- * - In the future, maybe simplify by moving all this to core 1?
- *   busy_wait_us_32(usec)
- *   busy_wait_ 
+ * - ADB is an open collector bus.  The data pin is held high at +5V when idle.
+ * - The host supplies minimum 500mA on the 5V pin.
+ * - When looking at the pin socket, the pins are:
+ *     4   3      1 - Data          3 - +5V
+ *    2     1     2 - Power switch  4 - GND
+ *      ===           (ground to turn on?)
  */
 
 /* pin 9 */
@@ -93,12 +97,13 @@ static AdbState command_next_state = Unknown;
 static void adb_isr();
 
 void adb_init() {
+    DBG("ADB initialized. Use U1-TX-B, and make sure shifters are set for 5V.");
+
     adb_kbd_regs[3]   = DEVICE_REGISTER(0, 2, 1, 1); // handler 0, default kbd id (2), enable srq, disable exc (1)
     adb_mouse_regs[3] = DEVICE_REGISTER(0, 3, 1, 1);
 
     gpio_set_function(ADB_GPIO, GPIO_FUNC_SIO);
     gpio_set_irq_enabled_with_callback(ADB_GPIO, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &adb_isr);
-    // gpio_set_ir
 }
 
 void adb_update() {
@@ -137,7 +142,7 @@ void handle_command(uint8_t command_byte) {
 }
 
 void handle_listen_data(uint16_t data) {
-    DBG("listen data: %d\n", data);
+    DBG("listen data: 0x%04x\n", data);
 }
 
 // we're going to be generous and give ourselves 30% tolerance; we'll also
