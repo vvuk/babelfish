@@ -1,6 +1,7 @@
 MIT License
 
-Copyright (c) 2021 Joakim L. Gilje
+Copyright (c) 2022-2023 Vladimir Vukicevic
+Copyright (c) 2021 Joakim L. Gilje (original usb2sun code)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
