@@ -1,6 +1,14 @@
 Babelfish
 =========
-# Active notes
+
+# v0.3
+
+Fixes from v0.2:
+- CH_B_S0/S1 routed to GPIO12 and GPIO13
+- expoed DB9 GPIO moved from GPIO13+14 to 14+15.
+  - DB9 pin 4 became GPIO15, pin 5 became GPIO14
+
+# v0.2
 
 TPMCP1703T-5002E/CB -- SOT-23-3 20V max input, 300mA max current. How will this play with 357mA current limit on TPS2113? And will this be enough to power USB and RP2040?
 TPMCP1703T-3302E/CB - SOT-23-3 
