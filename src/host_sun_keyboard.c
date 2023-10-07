@@ -4,42 +4,44 @@
 #include <hardware/uart.h>
 #include <hardware/irq.h>
 
-#include "host_sun_keycodes.h"
-#include "host.h"
+#define DEBUG_TAG "sun"
 #include "babelfish.h"
 
-#define UART_KEYBOARD_NUM 1
-#define UART_KEYBOARD_ID uart1
-#define UART_KEYBOARD_IRQ UART1_IRQ
+#include "host_sun_keycodes.h"
+
+#define UART_KEYBOARD_NUM 0
+#define UART_KEYBOARD uart0
+#define UART_KEYBOARD_IRQ UART0_IRQ
 
 static void on_keyboard_rx();
 
 void sun_keyboard_uart_init() {
-  babelfish_uart_config(UART_KEYBOARD_NUM, 'b');
+	DBG("Sun keyboard emulation: port A.\n");
+	DBG("Move shifter switch to 5V.\n");
 
-  uart_init(UART_KEYBOARD_ID, 1200);
-  uart_set_hw_flow(UART_KEYBOARD_ID, false, false);
-  uart_set_format(UART_KEYBOARD_ID, 8, 1, UART_PARITY_NONE);
+	// Apollo expects 5V serial, not RS-232 voltages.
+	channel_config(0, ChannelModeLevelShifter | ChannelModeUART | ChannelModeInvert);
+
+  uart_init(UART_KEYBOARD, 1200);
+  uart_set_hw_flow(UART_KEYBOARD, false, false);
+  uart_set_format(UART_KEYBOARD, 8, 1, UART_PARITY_NONE);
   irq_set_exclusive_handler(UART_KEYBOARD_IRQ, on_keyboard_rx);
   irq_set_enabled(UART_KEYBOARD_IRQ, true);
-  uart_set_irq_enables(UART_KEYBOARD_ID, true, false);
-
-  gpio_set_inover(U1_RX_B_GPIO, GPIO_OVERRIDE_INVERT);
-  gpio_set_outover(U1_TX_B_GPIO, GPIO_OVERRIDE_INVERT);
+  uart_set_irq_enables(UART_KEYBOARD, true, false);
 }
 
 // RX interrupt handler
 void on_keyboard_rx() {
-    while (uart_is_readable(UART_KEYBOARD_ID)) {
+    while (uart_is_readable(UART_KEYBOARD)) {
         // printf("System command: ");
-        uint8_t ch = uart_getc(UART_KEYBOARD_ID);
+        uint8_t ch = uart_getc(UART_KEYBOARD);
 
         switch (ch) {
           case 0x01: // reset
             // printf("Reset\n");
-            uart_putc_raw(UART_KEYBOARD_ID, 0xff);
-            uart_putc_raw(UART_KEYBOARD_ID, 0x04);
-            uart_putc_raw(UART_KEYBOARD_ID, 0x7f);
+            uart_putc_raw(UART_KEYBOARD, 0xff);
+            uart_putc_raw(UART_KEYBOARD, 0x04);
+            uart_putc_raw(UART_KEYBOARD, 0x7f);
             break;
           case 0x02: // bell on
             // printf("Bell on\n");
@@ -56,13 +58,13 @@ void on_keyboard_rx() {
           case 0x0e: // led command
             // printf("Led\n");
             {
-              uint8_t led = uart_getc(UART_KEYBOARD_ID);
+              uint8_t led = uart_getc(UART_KEYBOARD);
             }
             break;
           case 0x0f: // layout command
             // printf("Layout\n");
-            uart_putc_raw(UART_KEYBOARD_ID, 0xfe);
-            uart_putc_raw(UART_KEYBOARD_ID, 0x00);
+            uart_putc_raw(UART_KEYBOARD, 0xfe);
+            uart_putc_raw(UART_KEYBOARD, 0x00);
             break;
           default:
             // printf("Unknown system command: 0x%02x\n", ch);
@@ -90,7 +92,7 @@ void sun_kbd_event(const KeyboardEvent event) {
     keys_down--;
   }
 
-#define SEND_SUN_KEY(suncode, down) uart_putc_raw(UART_KEYBOARD_ID, down ? (suncode) : ((suncode) | 0x80))
+#define SEND_SUN_KEY(suncode, down) uart_putc_raw(UART_KEYBOARD, down ? (suncode) : ((suncode) | 0x80))
 
   if (gui) {
     switch (event.keycode) {
@@ -114,6 +116,6 @@ void sun_kbd_event(const KeyboardEvent event) {
   }
 
   if (keys_down == 0) {
-    uart_putc_raw(UART_KEYBOARD_ID, 0x7f);
+    uart_putc_raw(UART_KEYBOARD, 0x7f);
   }
 }

@@ -27,6 +27,8 @@
         "stdlib.h": "c",
         "board.h": "c",
         "babelfish.h": "c",
-        "debug.h": "c"
+        "debug.h": "c",
+        "events.h": "c",
+        "babelfish_hw.h": "c"
     }
 }

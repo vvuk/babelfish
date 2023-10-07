@@ -10,18 +10,16 @@
 
 #include <pico/stdlib.h>
 #include <pico/multicore.h>
+#include <pico/stdio_usb.h>
 #include <tusb.h>
 #include <pio_usb.h>
 
 #define DEBUG_VERBOSE 0
 #define DEBUG_TAG "main"
-#include "debug.h"
 
-#include "host.h"
 #include "babelfish.h"
 
-#include <pico/stdio_usb.h>
-
+// Whether to run USB host on core1
 #define USB_ON_CORE1 1
 
 HOST_PROTOTYPES(sun);
@@ -33,6 +31,25 @@ static HostDevice hosts[] = {
   HOST_ENTRY(adb),
   HOST_ENTRY(apollo),
   { 0 }
+};
+
+ChannelConfig channels[NUM_CHANNELS] = {
+  {
+    .channel_num = 0,
+    .uart_num = 0,
+    .tx_gpio = TX_A_GPIO,
+    .rx_gpio = RX_A_GPIO,
+    .mux_s0_gpio = CH_A_S0_GPIO,
+    .mux_s1_gpio = CH_A_S1_GPIO,
+  },
+  {
+    .channel_num = 1,
+    .uart_num = 1,
+    .tx_gpio = TX_B_GPIO,
+    .rx_gpio = RX_B_GPIO,
+    .mux_s0_gpio = CH_B_S0_GPIO,
+    .mux_s1_gpio = CH_B_S1_GPIO,
+  }
 };
 
 // TODO read from flash
@@ -48,11 +65,15 @@ mutex_t event_queue_mutex;
 void usb_host_setup(void);
 void core1_main(void);
 void mainloop(void);
+void channel_init(void);
+void led_init(void);
 
 int main(void)
 {
   // need 120MHz for USB
   set_sys_clock_khz(120000, true);
+
+  led_init();
 
   stdio_usb_init();
   stdio_init_all();
@@ -60,6 +81,8 @@ int main(void)
 
   DEBUG_INIT();
   DBG("==== B A B E L F I S H ====\n");
+
+  channel_init();
 
   mutex_init(&event_queue_mutex);
 
@@ -77,6 +100,22 @@ int main(void)
   mainloop();
 
   return 0;
+}
+
+void led_init(void)
+{
+  uint8_t leds[] = { LED_PWR_GPIO, LED_P_OK_GPIO, LED_AUX_GPIO };
+
+  for (uint i = 0; i < sizeof(leds); i++) {
+    gpio_set_drive_strength(leds[i], GPIO_DRIVE_STRENGTH_2MA);
+    gpio_set_dir(leds[i], GPIO_OUT);
+    gpio_set_function(leds[i], GPIO_FUNC_SIO);
+    gpio_put(leds[i], 1);
+  }
+
+  sleep_ms(100);
+  gpio_put(LED_P_OK_GPIO, 0);
+  gpio_put(LED_AUX_GPIO, 0);
 }
 
 void mainloop(void)

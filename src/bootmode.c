@@ -1,10 +1,8 @@
-#include "babelfish.h"
-#include "host.h"
-#include "hid_codes.h"
-
 #define DEBUG_VERBOSE 0
 #define DEBUG_TAG "bootmode"
-#include "debug.h"
+#include "babelfish.h"
+
+#include "hid_codes.h"
 
 #define UP 0
 #define DOWN 1

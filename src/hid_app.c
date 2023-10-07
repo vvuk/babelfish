@@ -9,10 +9,8 @@
 #include <hardware/uart.h>
 #include <tusb.h>
 
-#include "host.h"
-
 #define DEBUG_TAG "usb"
-#include "debug.h"
+#include "babelfish.h"
 
 #define MAX_REPORT  4
 

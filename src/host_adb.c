@@ -2,10 +2,7 @@
 #include <pico/time.h>
 #include <tusb.h>
 
-#include "host.h"
-
 #define DEBUG_TAG "adb"
-#include "debug.h"
 #include "babelfish.h"
 
 /*
@@ -18,9 +15,6 @@
  *    2     1     2 - Power switch  4 - GND
  *      ===           (ground to turn on?)
  */
-
-/* pin 9 */
-#define ADB_GPIO 6
 
 // timing tolerances are quite tight on the host (+/- 3% on most) but very forgiving
 // on device (+/- 30%)
@@ -96,13 +90,21 @@ static AdbState command_next_state = Unknown;
 
 static void adb_isr();
 
+static int ADB_GPIO = 0;
+
 void adb_init() {
-    DBG("ADB initialized. Use U1-TX-B, and make sure shifters are set for 5V.");
+    DBG("ADB keyboard and mouse emulation: port A.");
+    DBG("Configure level shifter for 5V.\n");
 
     adb_kbd_regs[3]   = DEVICE_REGISTER(0, 2, 1, 1); // handler 0, default kbd id (2), enable srq, disable exc (1)
     adb_mouse_regs[3] = DEVICE_REGISTER(0, 3, 1, 1);
 
-    gpio_set_function(ADB_GPIO, GPIO_FUNC_SIO);
+    channel_config(0, ChannelModeLevelShifter | ChannelModeGPIO | ChannelModeInvert);
+
+    ADB_GPIO = channels[0].rx_gpio;
+    // TODO -- a pin can only be in or out at once. We can read from an output pin,
+    // we need to make sure that it's not being driven.
+    //gpio_set_dir(ADB_GPIO, GPIO_INOUT);
     gpio_set_irq_enabled_with_callback(ADB_GPIO, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &adb_isr);
 }
 

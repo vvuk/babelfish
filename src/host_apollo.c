@@ -3,13 +3,12 @@
 #include <hardware/irq.h>
 #include <tusb.h>
 
-#include "host.h"
-#include "babelfish.h"
 #include "hid_codes.h"
 
 #define DEBUG_VERBOSE 2
 #define DEBUG_TAG "apollo"
-#include "debug.h"
+
+#include "babelfish.h"
 
 /**********************
 
@@ -20,8 +19,34 @@ From reading domain_os disassembly, the host to keyboard protocol looks like thi
 - It is immediately processed.
 - 0x00 outside of preceiding 0xff is ignored.
 
-
 ***********************/
+
+#define UART_KEYBOARD_NUM 0
+#define UART_KEYBOARD uart0
+#define UART_KEYBOARD_IRQ UART0_IRQ
+
+static void kbd_xmit_3(char a, char b, char c);
+static void on_keyboard_rx();
+
+void apollo_init() {
+	DBG("Apollo keyboard and mouse emulation: port A.\n");
+	DBG("Move shifter switch to 5V.\n");
+
+	// Apollo expects 5V serial, not RS-232 voltages.
+	channel_config(0, ChannelModeLevelShifter | ChannelModeUART | ChannelModeInvert);
+
+	uart_init(UART_KEYBOARD, 1200);
+	uart_set_hw_flow(UART_KEYBOARD, false, false);
+	uart_set_format(UART_KEYBOARD, 8, 1, UART_PARITY_EVEN);
+
+	irq_set_exclusive_handler(UART_KEYBOARD_IRQ, on_keyboard_rx);
+	irq_set_enabled(UART_KEYBOARD_IRQ, true);
+
+	uart_set_irq_enables(UART_KEYBOARD, true, false);
+
+	// say hello or something?
+	kbd_xmit_3(0xff, 0, 0);
+}
 
 typedef enum {
     Mode0_Compatibility = 0,
@@ -41,12 +66,6 @@ typedef enum {
 
 static KeyboardMode kbd_mode = Mode0_Compatibility;
 
-#define UART_KEYBOARD_NUM 1
-#define UART_KEYBOARD_ID uart1
-#define UART_KEYBOARD_IRQ UART1_IRQ
-
-static void on_keyboard_rx();
-
 // defined at end of file
 // [2] = 0 or gui
 // [256] = hid code
@@ -54,7 +73,7 @@ static void on_keyboard_rx();
 static uint16_t s_code_table[2][256][StateMax];
 
 static void kbd_xmit_uart(char c) {
-	uart_putc_raw(UART_KEYBOARD_ID, c);
+	uart_putc_raw(UART_KEYBOARD, c);
 }
 
 static void kbd_xmit_key(char c) {
@@ -80,7 +99,7 @@ static void kbd_xmit_2(char a, char b) {
 	kbd_xmit_uart(a); kbd_xmit_uart(b);
 }
 
-static void kbd_xmit_3(char a, char b, char c) {
+/*static*/ void kbd_xmit_3(char a, char b, char c) {
 	DBG_VV("xmit %02x %02x %02x\n", a, b, c);
 	kbd_xmit_uart(a); kbd_xmit_uart(b); kbd_xmit_uart(c);
 }
@@ -108,23 +127,6 @@ static void set_mode(KeyboardMode mode) {
 	}
 }
 
-void apollo_init() {
-	DBG("Apollo keyboard and mouse emulation: using UART1, B port.\n");
-	DBG("Configure level shifter for 5V.\n");
-
-	babelfish_uart_config(UART_KEYBOARD_NUM, 'b');
-
-	uart_init(UART_KEYBOARD_ID, 1200);
-	uart_set_hw_flow(UART_KEYBOARD_ID, false, false);
-	uart_set_format(UART_KEYBOARD_ID, 8, 1, UART_PARITY_EVEN);
-
-	irq_set_exclusive_handler(UART_KEYBOARD_IRQ, on_keyboard_rx);
-	irq_set_enabled(UART_KEYBOARD_IRQ, true);
-
-	uart_set_irq_enables(UART_KEYBOARD_ID, true, false);
-
-	kbd_xmit_3(0xff, 0, 0);
-}
 
 static void check_mouse_xmit();
 
@@ -293,8 +295,8 @@ void on_keyboard_rx() {
     static int kbd_cmd_bytes = 0;
 	static bool first_irq = true;
 
-    while (uart_is_readable(UART_KEYBOARD_ID)) {
-        uint8_t ch = uart_getc(UART_KEYBOARD_ID);
+    while (uart_is_readable(UART_KEYBOARD)) {
+        uint8_t ch = uart_getc(UART_KEYBOARD);
 
 		DBG_VV("recv %02x\n", ch);
 

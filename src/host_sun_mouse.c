@@ -2,7 +2,7 @@
 #include <hardware/uart.h>
 #include <tusb.h>
 
-#include "host.h"
+#define DEBUG_TAG "sun"
 #include "babelfish.h"
 
 static bool serial_data_in_tail = false;
@@ -13,16 +13,18 @@ static int32_t delta_y = 0;
 static char btns = NO_BUTTONS;
 static uint32_t interval = 40;
 
-#define UART_MOUSE_NUM 0
-#define UART_MOUSE_ID uart0
+#define UART_MOUSE_NUM 1
+#define UART_MOUSE uart1
 
 void sun_mouse_uart_init() {
-  babelfish_uart_config(UART_MOUSE_NUM, 'b');
+	DBG("Sun mouse emulation: port B (tx only).\n");
+	DBG("Move shifter switch to 5V.\n");
 
-  uart_init(UART_MOUSE_ID, 1200);
-  uart_set_hw_flow(UART_MOUSE_ID, false, false);
-  uart_set_format(UART_MOUSE_ID, 8, 1, UART_PARITY_NONE);
-  gpio_set_outover(U0_TX_B_GPIO, GPIO_OVERRIDE_INVERT);
+  channel_config(UART_MOUSE_NUM, ChannelModeLevelShifter | ChannelModeUART | ChannelModeInvert);
+
+  uart_init(UART_MOUSE, 1200);
+  uart_set_hw_flow(UART_MOUSE, false, false);
+  uart_set_format(UART_MOUSE, 8, 1, UART_PARITY_NONE);
 }
 
 static inline int32_t clamp(int32_t value, int32_t min, int32_t max) {
@@ -32,9 +34,9 @@ static inline int32_t clamp(int32_t value, int32_t min, int32_t max) {
 }
 
 static uint32_t push_head_packet() {
-  uart_putc_raw(UART_MOUSE_ID, btns | 0x80);
-  uart_putc_raw(UART_MOUSE_ID, delta_x);
-  uart_putc_raw(UART_MOUSE_ID, delta_y);
+  uart_putc_raw(UART_MOUSE, btns | 0x80);
+  uart_putc_raw(UART_MOUSE, delta_x);
+  uart_putc_raw(UART_MOUSE, delta_y);
   btns = NO_BUTTONS;
   delta_x = 0;
   delta_y = 0;
@@ -43,8 +45,8 @@ static uint32_t push_head_packet() {
 }
 
 static uint32_t push_tail_packet() {
-  uart_putc_raw(UART_MOUSE_ID, delta_x);
-  uart_putc_raw(UART_MOUSE_ID, delta_y);
+  uart_putc_raw(UART_MOUSE, delta_x);
+  uart_putc_raw(UART_MOUSE, delta_y);
   delta_x = 0;
   delta_y = 0;
   serial_data_in_tail = false;

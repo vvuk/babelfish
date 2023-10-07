@@ -6,8 +6,7 @@
 #include <stdarg.h>
 
 #include <tusb.h>
-#include "host.h"
-#include "debug.h"
+#include "babelfish.h"
 #include "hid_codes.h"
 
 #if DEBUG
