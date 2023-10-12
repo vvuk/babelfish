@@ -27,9 +27,9 @@ HOST_PROTOTYPES(adb);
 HOST_PROTOTYPES(apollo);
 
 static HostDevice hosts[] = {
-  HOST_ENTRY(sun),
-  HOST_ENTRY(adb),
-  HOST_ENTRY(apollo),
+  HOST_ENTRY(sun, "Sun emulation. Ch A RX/TX for keyboard, Ch B TX for mouse. Shifter setting 5V."),
+  HOST_ENTRY(adb, "ADB emulation. Ch A RX bidirectional. Shifter setting 5V."),
+  HOST_ENTRY(apollo, "Apollo emulation. Ch A RX/TX for keyboard and mouse. Shifter setting 5V."),
   { 0 }
 };
 
@@ -92,10 +92,11 @@ int main(void)
 
   host = &hosts[g_current_host_index];
 
+  DBG("Selecting host '%s'\n", host->name);
+  DBG("%s\n", host->notes);
+
   // TODO: read hostid from storage
   host->init();
-
-  DBG("Initialized, host '%s'\n", host->name);
 
   mainloop();
 

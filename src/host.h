@@ -15,6 +15,8 @@ typedef struct {
     void (*update)();
     void (*kbd_event)(const KeyboardEvent events);
     void (*mouse_event)(const MouseEvent events);
+
+    const char* notes;
 } HostDevice;
 
 extern HostDevice *host;
@@ -26,12 +28,13 @@ extern void NAME##_update(); \
 extern void NAME##_kbd_event(const KeyboardEvent event); \
 extern void NAME##_mouse_event(const MouseEvent event);
 
-#define HOST_ENTRY(NAME)  { \
+#define HOST_ENTRY(NAME, notes)  { \
     #NAME, \
     NAME##_init, \
     NAME##_update, \
     NAME##_kbd_event, \
-    NAME##_mouse_event \
+    NAME##_mouse_event, \
+    notes \
 }
 
 #endif

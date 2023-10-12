@@ -29,9 +29,6 @@ static void kbd_xmit_3(char a, char b, char c);
 static void on_keyboard_rx();
 
 void apollo_init() {
-	DBG("Apollo keyboard and mouse emulation: port A.\n");
-	DBG("Move shifter switch to 5V.\n");
-
 	// Apollo expects 5V serial, not RS-232 voltages.
 	channel_config(0, ChannelModeLevelShifter | ChannelModeUART | ChannelModeInvert);
 

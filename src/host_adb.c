@@ -93,9 +93,6 @@ static void adb_isr();
 static int ADB_GPIO = 0;
 
 void adb_init() {
-    DBG("ADB keyboard and mouse emulation: port A.");
-    DBG("Configure level shifter for 5V.\n");
-
     adb_kbd_regs[3]   = DEVICE_REGISTER(0, 2, 1, 1); // handler 0, default kbd id (2), enable srq, disable exc (1)
     adb_mouse_regs[3] = DEVICE_REGISTER(0, 3, 1, 1);
 
