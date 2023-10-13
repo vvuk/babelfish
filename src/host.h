@@ -19,7 +19,9 @@ typedef struct {
     const char* notes;
 } HostDevice;
 
+extern HostDevice hosts[];
 extern HostDevice *host;
+extern int g_current_host_index;
 
 /* Convenience */
 #define HOST_PROTOTYPES(NAME) \
