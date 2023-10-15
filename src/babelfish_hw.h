@@ -34,7 +34,9 @@
 #define USB_AUX_DP_GPIO 19
 
 // The USB 5V controller breaks out a status signal, connected to GPIO 23.
-#define USB_STAT_5V_GPIO 23
+#define USB_AUX_EN_GPIO 20
+#define USB_AUX_FLG_GPIO 21
+#define USB_5V_STAT_GPIO 23
 
 typedef enum {
     ChannelModeDirect = 0,

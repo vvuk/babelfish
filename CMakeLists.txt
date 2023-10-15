@@ -28,6 +28,8 @@ add_executable(babelfish
   src/host_apollo.c
   src/output.c
   src/debug.c
+  src/hw_aux.c
+  src/cmd.c
 
   new_stdio_usb/stdio_usb.c
   new_stdio_usb/stdio_usb_descriptors.c

@@ -26,10 +26,10 @@ HOST_PROTOTYPES(sun);
 HOST_PROTOTYPES(adb);
 HOST_PROTOTYPES(apollo);
 
-static HostDevice hosts[] = {
-  HOST_ENTRY(sun),
-  HOST_ENTRY(adb),
-  HOST_ENTRY(apollo),
+HostDevice hosts[] = {
+  HOST_ENTRY(sun, "Sun emulation. Ch A RX/TX for keyboard, Ch B TX for mouse. Shifter setting 5V."),
+  HOST_ENTRY(adb, "ADB emulation. Ch A RX bidirectional. Shifter setting 5V."),
+  HOST_ENTRY(apollo, "Apollo emulation. Ch A RX/TX for keyboard and mouse. Shifter setting 5V."),
   { 0 }
 };
 
@@ -53,7 +53,7 @@ ChannelConfig channels[NUM_CHANNELS] = {
 };
 
 // TODO read from flash
-static int g_current_host_index = 2;
+int g_current_host_index = 2;
 
 HostDevice *host = NULL;
 KeyboardEvent kbd_event_queue[MAX_QUEUED_EVENTS];
@@ -67,6 +67,8 @@ void core1_main(void);
 void mainloop(void);
 void channel_init(void);
 void led_init(void);
+void usb_aux_init(void);
+bool cmd_process_event(KeyboardEvent ev);
 
 int main(void)
 {
@@ -80,6 +82,7 @@ int main(void)
   sleep_ms(100);
 
   DEBUG_INIT();
+
   DBG("==== B A B E L F I S H ====\n");
 
   channel_init();
@@ -92,30 +95,15 @@ int main(void)
 
   host = &hosts[g_current_host_index];
 
+  DBG("Selecting host '%s'\n", host->name);
+  DBG("%s\n", host->notes);
+
   // TODO: read hostid from storage
   host->init();
-
-  DBG("Initialized, host '%s'\n", host->name);
 
   mainloop();
 
   return 0;
-}
-
-void led_init(void)
-{
-  uint8_t leds[] = { LED_PWR_GPIO, LED_P_OK_GPIO, LED_AUX_GPIO };
-
-  for (uint i = 0; i < sizeof(leds); i++) {
-    gpio_set_drive_strength(leds[i], GPIO_DRIVE_STRENGTH_2MA);
-    gpio_set_dir(leds[i], GPIO_OUT);
-    gpio_set_function(leds[i], GPIO_FUNC_SIO);
-    gpio_put(leds[i], 1);
-  }
-
-  sleep_ms(100);
-  gpio_put(LED_P_OK_GPIO, 0);
-  gpio_put(LED_AUX_GPIO, 0);
 }
 
 void mainloop(void)
@@ -131,6 +119,9 @@ void mainloop(void)
 
     for (uint i = 0; i < kbd_event_count; i++) {
       DBG_V("xmit key %s: [%d] 0x%04x\n", kbd_events[i].down ? "DOWN" : "UP", kbd_events[i].page, kbd_events[i].keycode);
+      // if cmd_process_event took the event
+      if (cmd_process_event(kbd_events[i]))
+        continue;
       host->kbd_event(kbd_events[i]);
     }
 
@@ -141,6 +132,8 @@ void mainloop(void)
     host->update();
 
     tud_task();
+
+    gpio_put(LED_P_OK_GPIO, !gpio_get(USB_5V_STAT_GPIO));
   }
 }
 

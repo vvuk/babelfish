@@ -17,9 +17,6 @@ static uint32_t interval = 40;
 #define UART_MOUSE uart1
 
 void sun_mouse_uart_init() {
-	DBG("Sun mouse emulation: port B (tx only).\n");
-	DBG("Move shifter switch to 5V.\n");
-
   channel_config(UART_MOUSE_NUM, ChannelModeLevelShifter | ChannelModeUART | ChannelModeInvert);
 
   uart_init(UART_MOUSE, 1200);
