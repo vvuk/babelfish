@@ -28,34 +28,32 @@ add_executable(babelfish
   src/host_apollo.c
   src/output.c
   src/debug.c
+  src/usb_descriptors.c
+  src/usb_reset_interface.c
   src/hw_aux.c
   src/cmd.c
-
-  new_stdio_usb/stdio_usb.c
-  new_stdio_usb/stdio_usb_descriptors.c
 )
 
 target_include_directories(babelfish PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/src
-  ${CMAKE_CURRENT_LIST_DIR}/new_stdio_usb/include)
+  ${CMAKE_CURRENT_LIST_DIR}/src)
 
 target_link_libraries(babelfish PUBLIC
   pico_stdlib
   pico_sync
   pico_multicore
   pico_unique_id
+  pico_usb_reset_interface
   tinyusb_host
-  tinyusb_device_unmarked  # special _unmarked because we've got our usb hack
-  tinyusb_pico_pio_usb)
+  tinyusb_device
+  tinyusb_pico_pio_usb
+)
 
 # enable usb output, disable uart output
-pico_enable_stdio_usb(babelfish 0)
-pico_enable_stdio_uart(babelfish 1)
+#pico_enable_stdio_usb(babelfish 1)
+pico_enable_stdio_uart(babelfish 0)
 
 target_compile_definitions(babelfish PUBLIC
   DEBUG
-  PICO_DEFAULT_UART_TX_PIN=0
-  PICO_DEFAULT_UART_RX_PIN=1
 )
 
 pico_add_extra_outputs(babelfish)

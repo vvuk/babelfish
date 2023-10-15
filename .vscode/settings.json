@@ -29,6 +29,8 @@
         "babelfish.h": "c",
         "debug.h": "c",
         "events.h": "c",
-        "babelfish_hw.h": "c"
+        "babelfish_hw.h": "c",
+        "stdio_usb.h": "c",
+        "hid_codes.h": "c"
     }
 }

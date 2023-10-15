@@ -1,76 +1,22 @@
-/*
- * This file is based on a file originally part of the
- * MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
- * Copyright (c) 2019 Damien P. George
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
-#if !defined(LIB_TINYUSB_DEVICE)
-
 #include "tusb.h"
-#if PICO_STDIO_USB_ENABLE_RESET_VIA_VENDOR_INTERFACE
-#include "pico/stdio_usb/reset_interface.h"
-#endif
+#include "pico/usb_reset_interface.h"
 #include "pico/unique_id.h"
 
-#ifndef USBD_VID
-#define USBD_VID (0x2E8A) // Raspberry Pi
-#endif
-
-#ifndef USBD_PID
-#define USBD_PID (0x000a) // Raspberry Pi Pico SDK CDC
-#endif
-
-#ifndef USBD_MANUFACTURER
-#define USBD_MANUFACTURER "Raspberry Pi"
-#endif
-
-#ifndef USBD_PRODUCT
-#define USBD_PRODUCT "Pico"
-#endif
+// Objective Development free VID/PID pair; PID = CDC
+#define USBD_VID (0x16c0)
+#define USBD_PID (0x05e1)
+#define USBD_MANUFACTURER "bitops.com"
+#define USBD_PRODUCT "Babelfish"
 
 #define TUD_RPI_RESET_DESC_LEN  9
-#if !PICO_STDIO_USB_ENABLE_RESET_VIA_VENDOR_INTERFACE
-#define USBD_DESC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN)
-#else
 #define USBD_DESC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_RPI_RESET_DESC_LEN)
-#endif
-#if !PICO_STDIO_USB_DEVICE_SELF_POWERED
+
 #define USBD_CONFIGURATION_DESCRIPTOR_ATTRIBUTE (0)
 #define USBD_MAX_POWER_MA (250)
-#else
-#define USBD_CONFIGURATION_DESCRIPTOR_ATTRIBUTE TUSB_DESC_CONFIG_ATT_SELF_POWERED
-#define USBD_MAX_POWER_MA (1)
-#endif
 
 #define USBD_ITF_CDC       (0) // needs 2 interfaces
-#if !PICO_STDIO_USB_ENABLE_RESET_VIA_VENDOR_INTERFACE
-#define USBD_ITF_MAX       (2)
-#else
 #define USBD_ITF_RPI_RESET (2)
 #define USBD_ITF_MAX       (3)
-#endif
 
 #define USBD_CDC_EP_CMD (0x81)
 #define USBD_CDC_EP_OUT (0x02)
@@ -115,9 +61,7 @@ static const uint8_t usbd_desc_cfg[USBD_DESC_LEN] = {
     TUD_CDC_DESCRIPTOR(USBD_ITF_CDC, USBD_STR_CDC, USBD_CDC_EP_CMD,
         USBD_CDC_CMD_MAX_SIZE, USBD_CDC_EP_OUT, USBD_CDC_EP_IN, USBD_CDC_IN_OUT_MAX_SIZE),
 
-#if PICO_STDIO_USB_ENABLE_RESET_VIA_VENDOR_INTERFACE
     TUD_RPI_RESET_DESCRIPTOR(USBD_ITF_RPI_RESET, USBD_STR_RPI_RESET)
-#endif
 };
 
 static char usbd_serial_str[PICO_UNIQUE_BOARD_ID_SIZE_BYTES * 2 + 1];
@@ -127,9 +71,7 @@ static const char *const usbd_desc_str[] = {
     [USBD_STR_PRODUCT] = USBD_PRODUCT,
     [USBD_STR_SERIAL] = usbd_serial_str,
     [USBD_STR_CDC] = "Board CDC",
-#if PICO_STDIO_USB_ENABLE_RESET_VIA_VENDOR_INTERFACE
     [USBD_STR_RPI_RESET] = "Reset",
-#endif
 };
 
 const uint8_t *tud_descriptor_device_cb(void) {
@@ -174,5 +116,3 @@ const uint16_t *tud_descriptor_string_cb(uint8_t index, __unused uint16_t langid
 
     return desc_str;
 }
-
-#endif

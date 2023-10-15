@@ -10,7 +10,6 @@
 
 #include <pico/stdlib.h>
 #include <pico/multicore.h>
-#include <pico/stdio_usb.h>
 #include <tusb.h>
 #include <pio_usb.h>
 
@@ -62,6 +61,9 @@ uint8_t kbd_event_queue_count = 0;
 uint8_t mouse_event_queue_count = 0;
 mutex_t event_queue_mutex;
 
+uint8_t const ascii_to_hid[128][2] = { HID_ASCII_TO_KEYCODE };
+uint8_t const hid_to_ascii[128][2] = { HID_KEYCODE_TO_ASCII };
+
 void usb_host_setup(void);
 void core1_main(void);
 void mainloop(void);
@@ -77,8 +79,7 @@ int main(void)
 
   led_init();
 
-  stdio_usb_init();
-  stdio_init_all();
+  //stdio_init_all();
   sleep_ms(100);
 
   DEBUG_INIT();
@@ -114,6 +115,8 @@ void mainloop(void)
   uint mouse_event_count = 0;
 
   while (true) {
+    DEBUG_TASK();
+
     get_queued_kbd_events(kbd_events, &kbd_event_count);
     get_queued_mouse_events(mouse_events, &mouse_event_count);
 
@@ -131,9 +134,8 @@ void mainloop(void)
 
     host->update();
 
-    tud_task();
-
     gpio_put(LED_P_OK_GPIO, !gpio_get(USB_5V_STAT_GPIO));
+    //gpio_put(LED_AUX_GPIO, tud_cdc_connected());
   }
 }
 

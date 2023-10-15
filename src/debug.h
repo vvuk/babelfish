@@ -7,13 +7,10 @@
 #define DEBUG_VERBOSE 0
 #endif
 
-#define UART_DEBUG_ID uart0
-#define UART_DEBUG_IRQ UART0_IRQ
-#define UART_DEBUG_TX_PIN 0
-#define UART_DEBUG_RX_PIN 1
-
 void debug_init();
+void debug_task();
 #define DEBUG_INIT() debug_init()
+#define DEBUG_TASK() debug_task()
 
 void dbg(const char* tag, const char *fmt, ...);
 
@@ -36,6 +33,7 @@ void dbg(const char* tag, const char *fmt, ...);
 #else
 
 #define DEBUG_INIT() do { } while (0)
+#define DEBUG_TASK() do { } while (0)
 #define DBG(...) do { } while (0)
 #define DBG_CONT(...) do { } while (0)
 
