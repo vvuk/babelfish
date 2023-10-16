@@ -13,10 +13,14 @@ void channel_init() {
     gpio_set_dir(cfg->rx_gpio, GPIO_IN);
     gpio_set_dir(cfg->mux_s0_gpio, GPIO_OUT);
     gpio_set_dir(cfg->mux_s1_gpio, GPIO_OUT);
+    gpio_put(cfg->mux_s0_gpio, 0);
+    gpio_put(cfg->mux_s1_gpio, 0);
   }
 }
 
 void channel_config(int ch, ChannelMode mode) {
+  DBG("Channel %c set config: 0x%08x\n", 'A' + ch, mode);
+
   ChannelConfig *cfg = &channels[ch];
   if (cfg->mode == mode)
     return;
@@ -43,11 +47,9 @@ void channel_config(int ch, ChannelMode mode) {
       break;
   }
 
-  uint8_t mux_mode = mode & ChannelModeOutputVoltageMask;
+  uint8_t mux_mode = mode & ChannelModeOutputMask;
   gpio_put(cfg->mux_s0_gpio, mux_mode & 1);
   gpio_put(cfg->mux_s1_gpio, (mux_mode >> 1) & 1);
 
   cfg->mode = mode;
-
-  DBG("Channel %c set config: %08x\n", 'A' + ch, mode);
 }

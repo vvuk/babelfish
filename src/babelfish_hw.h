@@ -42,7 +42,7 @@ typedef enum {
     ChannelModeDirect = 0,
     ChannelModeLevelShifter = 1,
     ChannelMode232 = 2,
-    ChannelModeOutputVoltageMask = 0x0f,
+    ChannelModeOutputMask = 0x0f,
 
     ChannelModeGPIO = 0 << 4, // configure this channel as bare GPIO
     ChannelModeUART = 1 << 4, // configure this channel as a UART

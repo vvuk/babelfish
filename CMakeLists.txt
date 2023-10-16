@@ -58,26 +58,32 @@ target_compile_definitions(babelfish PUBLIC
 
 pico_add_extra_outputs(babelfish)
 
-if (FALSE)
 add_executable(babelfish_test
   src/babelfish_test.c
+  src/debug.c
+  src/usb_descriptors.c
+  src/usb_reset_interface.c
+  src/hw_aux.c
+  src/output.c
 )
 
 target_include_directories(babelfish_test PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}/src)
 target_link_libraries(babelfish_test PUBLIC
   pico_stdlib
+  pico_sync
   pico_multicore
-  pico_stdio
+  pico_unique_id
+  pico_usb_reset_interface
   tinyusb_host
-  tinyusb_board
-  tinyusb_pico_pio_usb)
+  tinyusb_device
+  tinyusb_pico_pio_usb
+)
 target_compile_definitions(babelfish_test PRIVATE
   DEBUG
+  BABELFISH_TEST
 )
 
-pico_enable_stdio_usb(babelfish_test 0)
 pico_enable_stdio_uart(babelfish_test 0)
 
 pico_add_extra_outputs(babelfish_test)
-endif()
