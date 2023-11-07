@@ -6764,7 +6764,7 @@
   (symbol (lib_id "power:GND") (at 267.335 111.125 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 0d9a47ad-7a38-4c2b-b805-742facb9d681)
-    (property "Reference" "#PWR?" (at 267.335 117.475 0)
+    (property "Reference" "#PWR0102" (at 267.335 117.475 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 267.335 116.205 0)
@@ -6780,7 +6780,7 @@
     (instances
       (project "babelfish"
         (path "/25a7582e-3999-4fda-9acd-cd1e305548b6"
-          (reference "#PWR?") (unit 1)
+          (reference "#PWR0102") (unit 1)
         )
       )
     )
@@ -7353,7 +7353,7 @@
   (symbol (lib_id "power:GND") (at 329.565 123.825 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 2f9e6510-e6a2-4843-82c5-807d7284d47a)
-    (property "Reference" "#PWR?" (at 329.565 130.175 0)
+    (property "Reference" "#PWR0103" (at 329.565 130.175 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 329.565 128.905 0)
@@ -7369,7 +7369,7 @@
     (instances
       (project "babelfish"
         (path "/25a7582e-3999-4fda-9acd-cd1e305548b6"
-          (reference "#PWR?") (unit 1)
+          (reference "#PWR0103") (unit 1)
         )
       )
     )
@@ -8414,7 +8414,7 @@
   (symbol (lib_id "power:GND") (at 289.56 122.555 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 8e0d1f96-2462-4fa2-aed8-239536972550)
-    (property "Reference" "#PWR?" (at 289.56 128.905 0)
+    (property "Reference" "#PWR0101" (at 289.56 128.905 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 289.56 127.635 0)
@@ -8430,7 +8430,7 @@
     (instances
       (project "babelfish"
         (path "/25a7582e-3999-4fda-9acd-cd1e305548b6"
-          (reference "#PWR?") (unit 1)
+          (reference "#PWR0101") (unit 1)
         )
       )
     )
