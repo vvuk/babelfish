@@ -20,13 +20,13 @@ DE9 connector. Female.
   9   8   7   6
 
 1 - GND
-2 - RX A
-3 - TX A
-4 - 
-5 - 
-6 - VCC
-7 - RX B
-8 - TX B
+2 - TX A
+3 - TX B
+4 - GPIO15
+5 - GPIO14
+6 - VCC_IN
+7 - RX A
+8 - RX B
 9
 
 # Legacy notes
