@@ -42,7 +42,7 @@ typedef enum {
     ChannelModeDirect = 0,
     ChannelModeLevelShifter = 1,
     ChannelMode232 = 2,
-    ChannelModeOutputVoltageMask = 0x0f,
+    ChannelModeOutputMask = 0x0f,
 
     ChannelModeGPIO = 0 << 4, // configure this channel as bare GPIO
     ChannelModeUART = 1 << 4, // configure this channel as a UART
@@ -51,6 +51,18 @@ typedef enum {
     ChannelModeNoInvert = 0 << 8, // don't invert output
     ChannelModeInvert = 1 << 8, // invert output
     ChannelModeInvertMask = 0xf00,
+
+    // Direct GPIO, 3.3v
+    ChannelConfigDirect = ChannelModeDirect | ChannelModeGPIO | ChannelModeNoInvert,
+
+    // Direct GPIO, through level shifter (5v or vcc)
+    ChannelConfigDirectShifted = ChannelModeLevelShifter | ChannelModeGPIO | ChannelModeNoInvert,
+
+    // UART -- TTL, shifted (5v or vcc)
+    ChannelConfigUARTShifted = ChannelModeDirect | ChannelModeGPIO | ChannelModeInvert,
+
+    // UART -- RS232 through MAX3232
+    ChannelConfigRS232 = ChannelMode232 | ChannelModeUART | ChannelModeInvert,
 } ChannelMode;
 
 typedef struct ChannelConfig {

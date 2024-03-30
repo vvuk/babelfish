@@ -158,6 +158,7 @@ int debug_in(char *buf, int length) {
 static void
 debug_queue_fake_keypress(char ch)
 {
+#if !BABELFISH_TEST
     if (ch >= 128)
         return;
 
@@ -195,6 +196,7 @@ debug_queue_fake_keypress(char ch)
 
     //dbg("Sending key '%c' (0x%02x) as %d 0x%04x\n", ch, ch, report.modifier, report.keycode[0]);
     //host->kbd_report(&report);
+#endif
 }
 
 void

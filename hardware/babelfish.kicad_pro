@@ -34,9 +34,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 3.250038,
-          "height": 5.0,
-          "width": 5.0
+          "drill": 0.0,
+          "height": 1.0,
+          "width": 1.0
         },
         "silk_line_width": 0.12,
         "silk_text_italic": false,
@@ -56,22 +56,7 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [
-        "hole_clearance|112805561|76169099|4ef7bd37-65dd-4b46-958e-c0bb50b33229|046971b6-5630-46a1-9504-474b45828173",
-        "hole_clearance|113005409|76169099|4ef7bd37-65dd-4b46-958e-c0bb50b33229|f49a7dbf-b63f-44df-a942-9b1fc6deec86",
-        "hole_clearance|118405510|76169099|5e2f0c48-b5eb-4c73-80b3-e387c617102d|948c6703-9e70-4108-a106-37da88c90b55",
-        "hole_clearance|118605383|76169099|5e2f0c48-b5eb-4c73-80b3-e387c617102d|13638584-4c65-4587-9e64-d64c644c9537",
-        "starved_thermal|110750500|87651500|c5ef3388-3d70-4ee0-b895-e6547f26c8a8|29595885-7729-421f-ab4f-7bb10913a4f7|In1.Cu",
-        "starved_thermal|110750500|88926500|c5ef3388-3d70-4ee0-b895-e6547f26c8a8|ca652a44-0162-4062-8926-9c419f1ba4dd|In1.Cu",
-        "starved_thermal|110750500|90201500|c5ef3388-3d70-4ee0-b895-e6547f26c8a8|7012a4e6-9c89-4d46-acc3-2694d2bf2a52|In1.Cu",
-        "starved_thermal|112025500|90201500|c5ef3388-3d70-4ee0-b895-e6547f26c8a8|7290aa7c-501e-4ca8-919c-678ccc4d307c|In1.Cu",
-        "starved_thermal|113300500|88926500|c5ef3388-3d70-4ee0-b895-e6547f26c8a8|d823e365-9dd4-4346-921d-ebd232a77956|In1.Cu",
-        "starved_thermal|113300500|90201500|c5ef3388-3d70-4ee0-b895-e6547f26c8a8|313583b4-c079-40a2-b2b7-3b1489dde69c|In1.Cu",
-        "starved_thermal|116850000|85350000|774acabc-556f-4764-aba5-67c35692dabd|5a6c9846-d13d-45e9-90f4-1a6d31843ded|F.Cu",
-        "starved_thermal|119350000|86900000|774acabc-556f-4764-aba5-67c35692dabd|24a7fd0a-1e7e-48f2-9843-3bd18a0847c3|F.Cu",
-        "unconnected_items|110575075|96357798|5dbf49d8-4d0a-43d9-bd16-6e74ed3b4baa|412e223d-2a7e-4557-a61f-cacdcc630b7c",
-        "unconnected_items|110575075|96357798|5dbf49d8-4d0a-43d9-bd16-6e74ed3b4baa|936901fa-4941-41c9-a4fd-9f771fac232d"
-      ],
+      "drc_exclusions": [],
       "meta": {
         "filename": "board_design_settings.json",
         "version": 2
@@ -196,6 +181,7 @@
         0.254,
         0.3,
         0.4,
+        0.5,
         0.6,
         0.8,
         1.0
@@ -533,7 +519,7 @@
     "page_layout_descr_file": ""
   },
   "schematic": {
-    "annotate_start_num": 0,
+    "annotate_start_num": 35,
     "drawing": {
       "dashed_lines_dash_length_ratio": 12.0,
       "dashed_lines_gap_length_ratio": 3.0,
