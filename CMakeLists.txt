@@ -87,3 +87,22 @@ target_compile_definitions(babelfish_test PRIVATE
 pico_enable_stdio_uart(babelfish_test 0)
 
 pico_add_extra_outputs(babelfish_test)
+
+add_executable(hwtest
+        src/hwtest.c
+)
+
+target_link_libraries(hwtest PUBLIC
+        pico_stdlib
+        pico_sync
+        pico_multicore
+        pico_unique_id
+        pico_usb_reset_interface
+)
+target_compile_definitions(hwtest PRIVATE
+        DEBUG
+)
+pico_enable_stdio_uart(hwtest 0)
+pico_enable_stdio_usb(hwtest 1)
+
+pico_add_extra_outputs(hwtest)
