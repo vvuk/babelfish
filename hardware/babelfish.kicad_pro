@@ -59,14 +59,7 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [
-        "hole_clearance|58505561|29269099|4ef7bd37-65dd-4b46-958e-c0bb50b33229|046971b6-5630-46a1-9504-474b45828173",
-        "hole_clearance|58705409|29269099|4ef7bd37-65dd-4b46-958e-c0bb50b33229|f49a7dbf-b63f-44df-a942-9b1fc6deec86",
-        "hole_clearance|64105510|29269099|5e2f0c48-b5eb-4c73-80b3-e387c617102d|948c6703-9e70-4108-a106-37da88c90b55",
-        "hole_clearance|64305383|29269099|5e2f0c48-b5eb-4c73-80b3-e387c617102d|13638584-4c65-4587-9e64-d64c644c9537",
-        "starved_thermal|56450500|42026500|c5ef3388-3d70-4ee0-b895-e6547f26c8a8|ca652a44-0162-4062-8926-9c419f1ba4dd|In1.Cu",
-        "starved_thermal|57725500|43301500|c5ef3388-3d70-4ee0-b895-e6547f26c8a8|7290aa7c-501e-4ca8-919c-678ccc4d307c|In1.Cu"
-      ],
+      "drc_exclusions": [],
       "meta": {
         "filename": "board_design_settings.json",
         "version": 2
