@@ -1,3 +1,5 @@
+#include <glob.h>
+#include <sys/cdefs.h>
 /*
  * Babelfish
  * Copyright (C) 2023 Vladimir Vukicevic
@@ -68,7 +70,8 @@ uint8_t const hid_to_ascii[128][2] = { HID_KEYCODE_TO_ASCII };
 
 void usb_host_setup(void);
 void core1_main(void);
-void mainloop(void);
+
+_Noreturn void mainloop(void);
 void channel_init(void);
 void led_init(void);
 void usb_aux_init(void);
@@ -109,7 +112,7 @@ int main(void)
   return 0;
 }
 
-void mainloop(void)
+_Noreturn void mainloop(void)
 {
   KeyboardEvent kbd_events[MAX_QUEUED_EVENTS];
   MouseEvent mouse_events[MAX_QUEUED_EVENTS];
