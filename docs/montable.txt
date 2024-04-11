@@ -1,0 +1,14 @@
+
+    SGI     Sun    NeXT  PPC
+ 1  ID3/SCL        +12V  ID2
+ 2  ID0/SDA        PWR   ID3
+ 3  CSYNC   ID2    MCLK  TEST
+ 4  HSYNC   SRTN   MOUT  GND
+ 5  VSYNC   CSYNC  MIN   HSYNC
+ 6  ID1/DDC        -12V  ID0
+ 7  ID2/DGND             ID1
+ 8  GND     ID1    GND
+ 9  GND     ID0    GND   VSYNC
+10  SYGND   SYGND  GND   GND
+
+Sun ID 010 = 1280x1024
