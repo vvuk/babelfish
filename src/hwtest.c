@@ -25,17 +25,17 @@ static bool s_have_chars = false;
 
 void select_output(uint output)
 {
-    gpio_put(en_gpio, 0);
+    gpio_put(en_gpio, 1);
     gpio_put(path_sel_gpio[0], output & 1);
     gpio_put(path_sel_gpio[1], (output >> 1) & 1);
-    gpio_put(en_gpio, 1);
+    gpio_put(en_gpio, 0);
 }
 
-const uint32_t wave_interval_ns = 500000000; // 500ms (2Hz)
+const uint32_t wave_interval_us = 500000; // 500ms (2Hz)
 
 _Noreturn void mainloop()
 {
-    uint32_t next_swap_time = time_us_32() + wave_interval_ns;
+    uint32_t next_swap_time = time_us_32() + wave_interval_us;
     char out_char = 'A';
 
     while (true) {
@@ -48,7 +48,7 @@ _Noreturn void mainloop()
                 out_char++;
             }
 
-            next_swap_time += wave_interval_ns;
+            next_swap_time += wave_interval_us;
         }
 
         while (uart_is_readable(uart1)) {
@@ -56,14 +56,15 @@ _Noreturn void mainloop()
             printf("uart1: %c\n", c);
         }
 
-        if (s_have_chars) {
+        while (s_have_chars) {
+            s_have_chars = false;
             char c = getchar();
             if (c >= '0' && c <= '3') {
                 select_output(c - '0');
                 printf("output selected: %c\n", c);
+            } else if (c == '\n') {
+                printf("hardware test: enter 0 1 2 3 to select channel 0 1 2 3\n");
             }
-
-            s_have_chars = false;
         }
     }
 }
@@ -80,14 +81,21 @@ int main(void)
     // need 120MHz for USB
     set_sys_clock_khz(120000, true);
 
-    stdio_init_all();
-    sleep_ms(100);
+    stdio_usb_init();
+
+    while (!stdio_usb_connected()) {}
 
     GP_OUT(2);
     GP_OUT(3);
     gpio_set_function(4, GPIO_FUNC_UART);
     gpio_set_function(5, GPIO_FUNC_UART);
     GP_OUT(6);
+
+    GP_OUT(25); // led
+    gpio_set_drive_strength(24, GPIO_DRIVE_STRENGTH_4MA);
+    gpio_put(25, 1);
+
+    gpio_put(en_gpio, 1);
 
     uart_init(uart1, 38400);
 
