@@ -1,6 +1,9 @@
 #ifndef BABLEFISH_H_
 #define BABELFISH_H_
 
+#define HW_REV 0x03
+
+#if HW_REV >= 0x02
 // Channel A pins
 #define TX_A_GPIO 0
 #define RX_A_GPIO 1
@@ -37,6 +40,7 @@
 #define USB_AUX_EN_GPIO 20
 #define USB_AUX_FLG_GPIO 21
 #define USB_5V_STAT_GPIO 23
+#endif
 
 typedef enum {
     ChannelModeDirect = 0,

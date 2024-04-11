@@ -5,8 +5,31 @@ Babelfish
 
 Fixes from v0.2:
 - CH_B_S0/S1 routed to GPIO12 and GPIO13
-- expoed DB9 GPIO moved from GPIO13+14 to 14+15.
+- exposed DB9 GPIO moved from GPIO13+14 to 14+15.
   - DB9 pin 4 became GPIO15, pin 5 became GPIO14
+
+| GPIO # | Usage |
+| ====== | ===== |
+|  0 | TX_A |
+|  1 | RX_A |
+|  2 | CH_A_S0 - A channel output select |
+|  3 | CH_A_S1 - A channel output select |
+|  6 | LED_PWR |
+|  8 | TX_B |
+|  9 | RX_B |
+| 10 | LED_P_OK |
+| 11 | LED_AUX |
+| 12 | CH_B_S0 |
+| 13 | CH_B_S1 |
+| 14 | GPIO14 |
+| 15 | GPIO15 |
+| 18 | USB2_D- |
+| 19 | USB2_D+ |
+| 20 | USB2_EN |
+| 21 | USB2_FLG |
+| 23 | STAT_5V0 |
+
+
 
 # v0.2
 

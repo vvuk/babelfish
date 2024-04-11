@@ -83,9 +83,11 @@ target_link_libraries(babelfish_test PUBLIC
 target_compile_definitions(babelfish_test PRIVATE
   DEBUG
   BABELFISH_TEST
+  FORCE_STDIO_USB
 )
 
 pico_enable_stdio_uart(babelfish_test 0)
+pico_enable_stdio_usb(babelfish_test 1)
 
 pico_add_extra_outputs(babelfish_test)
 

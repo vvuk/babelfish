@@ -3,11 +3,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "babelfish_hw.h"
+
 _Noreturn void mainloop();
 void select_output(uint output);
 
 // pin 4-7.
-static const uint path_sel_gpio[2] = {2, 3};
+static const uint path_sel_gpio[2] = { CH_A_S0_GPIO, CH_A_S1_GPIO };
 static const uint out_gpio = 4; // also UART 1 TX
 static const uint in_gpio = 5; // also UART 2 RX
 // pin 9.
