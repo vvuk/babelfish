@@ -13,6 +13,8 @@ void channel_init() {
     gpio_set_dir(cfg->rx_gpio, GPIO_IN);
     gpio_set_dir(cfg->mux_s0_gpio, GPIO_OUT);
     gpio_set_dir(cfg->mux_s1_gpio, GPIO_OUT);
+//    gpio_set_pulls(cfg->mux_s0_gpio, true, true);
+//    gpio_set_pulls(cfg->mux_s1_gpio, true, true);
     gpio_put(cfg->mux_s0_gpio, 0);
     gpio_put(cfg->mux_s1_gpio, 0);
   }

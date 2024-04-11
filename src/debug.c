@@ -30,11 +30,12 @@ debug_init()
     // wait for host to connect to CDC
     absolute_time_t until = make_timeout_time_ms(200);
     do {
+        tud_task();
         if (debug_connected()) {
             sleep_ms(10);
             break;
         }
-        sleep_ms(10);
+        sleep_ms(5);
     } while (!time_reached(until));
 }
 

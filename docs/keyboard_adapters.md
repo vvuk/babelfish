@@ -35,9 +35,10 @@ CPU end of _*cable*_ (yes, these are the actual DIN8 pin numbers):
 
 | Babelfish DB9 | Apollo DIN8 |
 | :--- | :--- |
-| 1 (GND) | 3, 7 (Logic ground) |
-| 2 (TX A) | 2 (Data to CPU) |
-| 7 (RX A) | 5 (Data to keyboard) |
+| 1 (GND) | 3, 7 (Logic ground) (white/3) |  
+| 2 (TX A) | 2 (Data to CPU) (light brown/light orange) |
+| 7 (RX A) | 5 (Data to keyboard) (yellow) |
+| | 4 (RESET) (dark brown) |
 
 ## ADB
 
