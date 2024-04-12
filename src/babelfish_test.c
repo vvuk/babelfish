@@ -109,7 +109,8 @@ int main()
 
   stdio_usb_init();
 
-  while (!stdio_usb_connected()) {}
+  uint32_t until = time_us_32() + 5000000; // 5s for USB
+  while (!stdio_usb_connected() && time_us_32() < until) {}
   stdio_set_chars_available_callback(usb_debug_chars_avail_cb, NULL);
 
   DEBUG_INIT();
@@ -129,11 +130,6 @@ int main()
 
 
   DBG("===== Test program\n");
-
-  int ch_config = 0;
-  absolute_time_t until = make_timeout_time_ms(0);
-  absolute_time_t toggle_t = make_timeout_time_ms(0);
-  bool tx = true;
 
   mainloop();
 }

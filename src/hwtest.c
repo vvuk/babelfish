@@ -12,8 +12,6 @@ void select_output(uint output);
 static const uint path_sel_gpio[2] = { CH_A_S0_GPIO, CH_A_S1_GPIO };
 static const uint out_gpio = 4; // also UART 1 TX
 static const uint in_gpio = 5; // also UART 2 RX
-// pin 9.
-static const uint en_gpio = 6;
 
 // hookup is:
 // pin 4 + 5 to sel0/1
@@ -27,10 +25,10 @@ static bool s_have_chars = false;
 
 void select_output(uint output)
 {
-    gpio_put(en_gpio, 1);
+    //gpio_put(en_gpio, 1);
     gpio_put(path_sel_gpio[0], output & 1);
     gpio_put(path_sel_gpio[1], (output >> 1) & 1);
-    gpio_put(en_gpio, 0);
+    //gpio_put(en_gpio, 0);
 }
 
 const uint32_t wave_interval_us = 500000; // 500ms (2Hz)
@@ -43,6 +41,7 @@ _Noreturn void mainloop()
     while (true) {
         uint32_t now = time_us_32();
         if (now >= next_swap_time) {
+            uart_putc_raw(uart0, out_char);
             uart_putc_raw(uart1, out_char);
             if (out_char == 'Z') {
                 out_char = 'A';
@@ -89,17 +88,18 @@ int main(void)
 
     GP_OUT(2);
     GP_OUT(3);
-    gpio_set_function(4, GPIO_FUNC_UART);
-    gpio_set_function(5, GPIO_FUNC_UART);
-    GP_OUT(6);
+    gpio_set_function(0, GPIO_FUNC_UART);
+    gpio_set_function(1, GPIO_FUNC_UART);
+    gpio_set_function(8, GPIO_FUNC_UART);
+    gpio_set_function(9, GPIO_FUNC_UART);
 
-    GP_OUT(25); // led
-    gpio_set_drive_strength(24, GPIO_DRIVE_STRENGTH_4MA);
-    gpio_put(25, 1);
+    GP_OUT(6); // led
+    gpio_put(6, 1);
 
-    gpio_put(en_gpio, 1);
+    //gpio_put(en_gpio, 1);
 
-    uart_init(uart1, 38400);
+    uart_init(uart0, 1200);
+    uart_init(uart1, 1200);
 
     stdio_set_chars_available_callback(chars_avail_cb, NULL);
 
