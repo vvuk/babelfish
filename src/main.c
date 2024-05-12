@@ -87,13 +87,9 @@ int main(void)
 
   tud_init(0);
 
-  bool ok = stdio_nusb_init();
-  if (!ok) {
-    gpio_put(LED_PWR_GPIO, 0);
-  }
+  stdio_nusb_init();
 
-
-  for (int i = 0; i < 20 && !stdio_nusb_connected(); i++) {
+  for (int i = 0; i < 10 && !stdio_nusb_connected(); i++) {
     sleep_ms(100);
   }
 
@@ -102,6 +98,12 @@ int main(void)
   DEBUG_INIT();
 
   DBG("==== B A B E L F I S H ====\n");
+
+  usb_aux_init();
+
+  DBG("Enabled AUX USB\n");
+
+  sleep_ms(100);
 
   channel_init();
 

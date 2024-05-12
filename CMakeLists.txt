@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 # set global define USBH_DEBUG=2
 add_compile_definitions(USBH_DEBUG=2)
+# add_compile_definitions(CFG_TUSB_DEBUG=2)
 
 pico_sdk_init()
 
@@ -35,7 +36,6 @@ add_executable(babelfish
   src/cmd.c
 
   src/stdio_nusb/stdio_usb.c
-  src/stdio_nusb/reset_interface.c
 )
 
 target_include_directories(babelfish PUBLIC
