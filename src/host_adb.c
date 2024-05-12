@@ -134,7 +134,7 @@ static AdbState data_next_state = Unknown;
 static uint16_t data_value = 0;
 
 #if !defined(TESTBENCH)
-static void adb_isr(uint32_t, uint32_t);
+static void adb_isr(unsigned int, long unsigned int);
 #endif
 
 static int ADB_GPIO = 0;
@@ -362,7 +362,7 @@ void adb_state_machine(uint64_t cur_time, bool is_rise) {
     }
 }
 
-void adb_isr(uint32_t gpio, uint32_t events) {
+void adb_isr(unsigned int gpio, long unsigned int events) {
     uint64_t cur_time = time_us_64();
     bool is_rise = events & GPIO_IRQ_EDGE_RISE;
     bool is_fall = events & GPIO_IRQ_EDGE_FALL;
