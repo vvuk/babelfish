@@ -33,6 +33,9 @@ add_executable(babelfish
   src/usb_reset_interface.c
   src/hw_aux.c
   src/cmd.c
+
+  src/stdio_nusb/stdio_usb.c
+  src/stdio_nusb/reset_interface.c
 )
 
 target_include_directories(babelfish PUBLIC
@@ -49,8 +52,8 @@ target_link_libraries(babelfish PUBLIC
   tinyusb_pico_pio_usb
 )
 
-# enable usb output, disable uart output
-#pico_enable_stdio_usb(babelfish 1)
+# we have our own stdio usb copy hack
+pico_enable_stdio_usb(babelfish 0)
 pico_enable_stdio_uart(babelfish 0)
 
 target_compile_definitions(babelfish PUBLIC
@@ -59,6 +62,8 @@ target_compile_definitions(babelfish PUBLIC
 
 pico_add_extra_outputs(babelfish)
 
+
+if (FALSE)
 add_executable(babelfish_test
   src/babelfish_test.c
   src/debug.c
@@ -87,7 +92,7 @@ target_compile_definitions(babelfish_test PRIVATE
 )
 
 pico_enable_stdio_uart(babelfish_test 0)
-pico_enable_stdio_usb(babelfish_test 1)
+pico_enable_stdio_usb(babelfish_test 0)
 
 pico_add_extra_outputs(babelfish_test)
 
@@ -106,6 +111,7 @@ target_compile_definitions(hwtest PRIVATE
         DEBUG
 )
 pico_enable_stdio_uart(hwtest 0)
-pico_enable_stdio_usb(hwtest 1)
+pico_enable_stdio_usb(hwtest 0)
 
 pico_add_extra_outputs(hwtest)
+endif()

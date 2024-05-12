@@ -14,6 +14,7 @@
 #include <pico/multicore.h>
 #include <tusb.h>
 #include <pio_usb.h>
+#include "stdio_nusb/stdio_usb.h"
 
 #define DEBUG_VERBOSE 0
 #define DEBUG_TAG "main"
@@ -84,7 +85,18 @@ int main(void)
 
   led_init();
 
-  //stdio_init_all();
+  tud_init(0);
+
+  bool ok = stdio_nusb_init();
+  if (!ok) {
+    gpio_put(LED_PWR_GPIO, 0);
+  }
+
+
+  for (int i = 0; i < 20 && !stdio_nusb_connected(); i++) {
+    sleep_ms(100);
+  }
+
   sleep_ms(100);
 
   DEBUG_INIT();

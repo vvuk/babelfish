@@ -3,6 +3,7 @@
 #include <tusb.h>
 #include <stdarg.h>
 #include <pio_usb.h>
+#include "stdio_nusb/stdio_usb.h"
 
 #define DEBUG_TAG "test"
 #include "babelfish.h"
@@ -107,10 +108,10 @@ int main()
   // need 120MHz for USB
   set_sys_clock_khz(120000, true);
 
-  stdio_usb_init();
+  stdio_nusb_init();
 
   uint32_t until = time_us_32() + 5000000; // 5s for USB
-  while (!stdio_usb_connected() && time_us_32() < until) {}
+  while (!stdio_nusb_connected() && time_us_32() < until) {}
   stdio_set_chars_available_callback(usb_debug_chars_avail_cb, NULL);
 
   DEBUG_INIT();

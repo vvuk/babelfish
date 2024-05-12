@@ -2,6 +2,7 @@
 #include <pico/stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "stdio_nusb/stdio_usb.h"
 
 #include "babelfish_hw.h"
 
@@ -82,9 +83,9 @@ int main(void)
     // need 120MHz for USB
     set_sys_clock_khz(120000, true);
 
-    stdio_usb_init();
+    stdio_nusb_init();
 
-    while (!stdio_usb_connected()) {}
+    while (!stdio_nusb_connected()) {}
 
     GP_OUT(2);
     GP_OUT(3);
