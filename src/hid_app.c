@@ -27,6 +27,14 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
 void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance);
 void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* report, uint16_t len);
 
+void tuh_hid_set_protocol_complete_cb(uint8_t dev_addr, uint8_t instance, uint8_t protocol)
+{
+  DBG("HID Set Protocol Complete %d:%d %d\r\n", dev_addr, instance, protocol);
+  if (!tuh_hid_receive_report(dev_addr, instance)) {
+    DBG("HID: Failed to request to receive report!\r\n");
+  }
+}
+
 // Invoked when device with hid interface is mounted
 // Report descriptor is also available for use. tuh_hid_parse_report_descriptor() can be used to parse common/simple enough descriptor.
 // Note: if report descriptor length > CFG_TUH_ENUMERATION_BUFSIZE, it will be skipped therefore report_desc = NULL, desc_len = 0
@@ -41,7 +49,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
   DBG("HID has %u reports \r\n", hid_info[instance].report_count);
   for (int i = 0; i < hid_info[instance].report_count; ++i) {
     const tuh_hid_report_info_t* info = &hid_info[instance].report_info[i];
-    DBG("  Report %d: id=%d, usage=%d, usage_page=%d\r\n", i, info->report_id, info->usage, info->usage_page);
+    DBG("  Report %d: id=%d, usage_page=0x%x, usage=0x%x\r\n", i, info->report_id, info->usage_page, info->usage);
   }
 
   uint8_t proto = tuh_hid_get_protocol(dev_addr, instance);
@@ -57,6 +65,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
   if (!tuh_hid_receive_report(dev_addr, instance)) {
     DBG("HID: Failed to request to receive report!\r\n");
   }
+  DBG("HID: report requested for %d:%d\n", dev_addr, instance);
 }
 
 // Invoked when device with hid interface is un-mounted
@@ -69,8 +78,9 @@ void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance)
 void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* report, uint16_t len)
 {
   uint8_t const itf_protocol = tuh_hid_interface_protocol(dev_addr, instance);
+  uint8_t const protocol = tuh_hid_get_protocol(dev_addr, instance);
 
-  //DBG("HID report (dev %d:%d, proto %d) length %d\n", dev_addr, instance, itf_protocol, len);
+  DBG("HID report (dev %d:%d, protocol %d itf_protocol %d) length %d\n", dev_addr, instance, protocol, itf_protocol, len);
 
   if (itf_protocol == HID_ITF_PROTOCOL_KEYBOARD) {
       translate_boot_kbd_report((hid_keyboard_report_t const*) report);
@@ -78,8 +88,21 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
       translate_boot_mouse_report((hid_mouse_report_t const*) report);
   } else {
       // Generic report requires matching ReportID and contents with previous parsed report info
+      DBG("===== Generic report!\n");
       process_generic_report(dev_addr, instance, report, len);
   }
+
+/*
+  if (ax == instance) {
+    DBG("Switching to HID_REPORT_PROTOCOL\r\n");
+    tuh_hid_set_protocol(dev_addr, instance, HID_PROTOCOL_REPORT);
+    ax = -1;
+  } else if (bx == instance) {
+    DBG("Switching to HID_REPORT_PROTOCOL\r\n");
+    tuh_hid_set_protocol(dev_addr, instance, HID_PROTOCOL_REPORT);
+    bx = -1;
+  } else {
+*/
 
   // Continue to request to receive a report
   if (!tuh_hid_receive_report(dev_addr, instance)) {

@@ -1,4 +1,5 @@
 #include <pico/stdlib.h>
+#include <pico/bootrom.h>
 #include <hardware/uart.h>
 #include <hardware/irq.h>
 #include <stdarg.h>
@@ -19,6 +20,56 @@ static void debug_in_char(char ch);
 static bool debug_connected();
 
 #define USB_DEBUG_TIMEOUT_US 50
+
+#define DBG_MSG_COUNT 8
+static char main_thread_debug_msgs[64][DBG_MSG_COUNT];
+static int main_thread_debug_msg_idx = 0;
+static int main_thread_debug_msg_seen = 0;
+
+int main_thread_debug_update()
+{
+    while (main_thread_debug_msg_seen < main_thread_debug_msg_idx) {
+        char *msg = main_thread_debug_msgs[main_thread_debug_msg_seen % DBG_MSG_COUNT];
+        puts(msg);
+        main_thread_debug_msg_seen++;
+    }
+}
+
+int ext_tu_printf(const char* fmt, ...)
+{
+    char buf[128];
+
+    va_list args;
+    va_start(args, fmt);
+    int len = vsnprintf(buf, 127, fmt, args);
+    va_end(args);
+
+    //buf[len] = '\n';
+    //buf[len+1] = '\0';
+    //len++;
+
+    debug_out(buf, len+1);
+    return len;
+}
+
+int ext_tu_printfz(const char* fmt, ...)
+{
+    int len = 0;
+
+    int idx = main_thread_debug_msg_idx;
+    char *nx = main_thread_debug_msgs[idx % DBG_MSG_COUNT];
+
+    va_list args;
+    va_start(args, fmt);
+    len = vsnprintf(nx, 62, fmt, args);
+    va_end(args);
+
+    nx[len] = '\n';
+    nx[len+1] = '\0';
+
+    main_thread_debug_msg_idx++;
+    return len+1;
+}
 
 void
 debug_init()
@@ -42,6 +93,7 @@ debug_init()
 void
 debug_task()
 {
+    main_thread_debug_update();
     tud_task();
 
     static char buf[128];
@@ -205,21 +257,17 @@ debug_in_char(char ch)
     static bool in_esc = false;
     static bool in_motion = false;
 
-#if false
     if (ch == 0x1B) { // ESC
         in_esc = true;
         return;
     }
     
-    if (in_esc) {
-        if (ch == '[') {
-            in_motion = true;
-        } else {
-            debug_queue_fake_keypress(0x1B);
-            in_esc = false;
-            goto process_char;
-        }
+    if (in_esc && ch == '[') {
+        in_motion = true;
+        return;
+    }
 
+    if (in_esc && in_motion) {
         // translate arrow keys to mouse motion 
         if (in_motion) {
             hid_mouse_report_t report = { 0 };
@@ -235,13 +283,20 @@ debug_in_char(char ch)
             //host->mouse_event(&report);
         }
 
-        in_esc = in_motion = false;
-        return;
+        goto reset;
     }
-#endif
+
+    if (ch == 'B') {
+        DBG("Rebooting to USB bootloader...\n");
+        sleep_ms(100);
+        reset_usb_boot(0u, 0u);
+    }
 
 process_char:
     debug_queue_fake_keypress(ch);
+
+reset:
+    in_esc = in_motion = false;
 }
 
 // The below is straight direct UART debugging.
