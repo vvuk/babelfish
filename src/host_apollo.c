@@ -30,7 +30,7 @@ static void on_keyboard_rx();
 
 void apollo_init() {
 	// Apollo expects 5V serial, not RS-232 voltages.
-	channel_config(0, ChannelModeLevelShifter | ChannelModeUART | ChannelModeInvert);
+	channel_config(0, ChannelModeLevelShifter | ChannelModeUART);
 
 	uart_init(UART_KEYBOARD, 1200);
 	uart_set_hw_flow(UART_KEYBOARD, false, false);
@@ -40,6 +40,8 @@ void apollo_init() {
 	irq_set_enabled(UART_KEYBOARD_IRQ, true);
 
 	uart_set_irq_enables(UART_KEYBOARD, true, false);
+
+	sleep_ms(10);
 
 	// say hello or something?
 	kbd_xmit_3(0xff, 0, 0);
