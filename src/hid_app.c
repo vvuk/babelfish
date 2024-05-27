@@ -65,7 +65,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_re
   if (!tuh_hid_receive_report(dev_addr, instance)) {
     DBG("HID: Failed to request to receive report!\r\n");
   }
-  DBG("HID: report requested for %d:%d\n", dev_addr, instance);
+  DBG_VV("HID: report requested for %d:%d\n", dev_addr, instance);
 }
 
 // Invoked when device with hid interface is un-mounted
@@ -80,7 +80,7 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
   uint8_t const itf_protocol = tuh_hid_interface_protocol(dev_addr, instance);
   uint8_t const protocol = tuh_hid_get_protocol(dev_addr, instance);
 
-  DBG("HID report (dev %d:%d, protocol %d itf_protocol %d) length %d\n", dev_addr, instance, protocol, itf_protocol, len);
+  DBG_VV("HID report (dev %d:%d, protocol %d itf_protocol %d) length %d\n", dev_addr, instance, protocol, itf_protocol, len);
 
   if (itf_protocol == HID_ITF_PROTOCOL_KEYBOARD) {
       translate_boot_kbd_report((hid_keyboard_report_t const*) report);

@@ -5,7 +5,7 @@
 
 #include "hid_codes.h"
 
-#define DEBUG_VERBOSE 2
+#define DEBUG_VERBOSE 0
 #define DEBUG_TAG "apollo"
 
 #include "babelfish.h"
@@ -25,8 +25,16 @@ From reading domain_os disassembly, the host to keyboard protocol looks like thi
 #define UART_KEYBOARD uart0
 #define UART_KEYBOARD_IRQ UART0_IRQ
 
+typedef enum {
+    Mode0_Compatibility = 0,
+    Mode1_Keystate = 1,
+    Mode2_RelativeCursorControl = 2,
+    Mode3_AbsoluteCursorControl = 3
+} KeyboardMode;
+
 static void kbd_xmit_3(char a, char b, char c);
 static void on_keyboard_rx();
+static void set_mode(KeyboardMode mode);
 
 void apollo_init() {
 	// Apollo expects 5V serial, not RS-232 voltages.
@@ -41,18 +49,26 @@ void apollo_init() {
 
 	uart_set_irq_enables(UART_KEYBOARD, true, false);
 
-	sleep_ms(10);
+	//sleep_ms(10);
 
 	// say hello or something?
 	kbd_xmit_3(0xff, 0, 0);
-}
 
-typedef enum {
-    Mode0_Compatibility = 0,
-    Mode1_Keystate = 1,
-    Mode2_RelativeCursorControl = 2,
-    Mode3_AbsoluteCursorControl = 3
-} KeyboardMode;
+	// rescue shutdown
+#if 0
+	sleep_ms(10);
+
+	set_mode(Mode1_Keystate);
+
+	KeyboardEvent ke;
+	#define KE(k) do { ke.down = true; ke.keycode = (k); apollo_kbd_event(ke); sleep_ms(1); ke.down = false; apollo_kbd_event(ke); sleep_ms(1); } while (0)
+	KE(HID_KEY_S);
+	KE(HID_KEY_H);
+	KE(HID_KEY_U);
+	KE(HID_KEY_T);
+	KE(HID_KEY_ENTER);
+#endif
+}
 
 typedef enum {
     State_Down = 0,
@@ -89,6 +105,8 @@ static void kbd_tx_str(const char *str) {
 	DBG_VV("xmit str '%s'\n", str);
 	while (*str) {
 		kbd_xmit_uart(*str++);
+		// slow this down, unclear if the OS can actually handle a true 1200 baud stream
+		busy_wait_ms(1);
 	}
 }
 
@@ -108,7 +126,7 @@ static void kbd_xmit_4(char a, char b, char c, char d) {
 	kbd_xmit_uart(a); kbd_xmit_uart(b); kbd_xmit_uart(c); kbd_xmit_uart(d);
 }
 
-static void force_set_mode(KeyboardMode mode) {
+void force_set_mode(KeyboardMode mode) {
 	DBG("Setting keyboard mode to %d (no xmit)\n", mode);
 	kbd_mode = mode;
 }
@@ -173,6 +191,10 @@ void apollo_kbd_event(const KeyboardEvent event) {
 				kbd_xmit(0x10);
 				kbd_xmit(0x04);
 				kbd_xmit(0x5e);
+				return;
+			
+			case HID_KEY_F10:
+				set_mode(Mode0_Compatibility);
 				return;
 		}
 
@@ -239,11 +261,14 @@ void check_mouse_xmit() {
 	if (mouse_cdx == 0 && mouse_cdy == 0 && mouse_cbtn == mouse_lbtn)
 		return;
 
+	if (kbd_mode == Mode0_Compatibility)
+		return;
+
 	uint32_t now_ms = to_ms_since_boot(get_absolute_time());
 	if (now_ms - mouse_last_report >= MOUSE_RATE_MS || mouse_cbtn != mouse_lbtn) {
 		set_mode(Mode2_RelativeCursorControl);
 
-		DBG_V("mouse xmit: cdx %d cdy %d btn %d\n", mouse_cdx, mouse_cdy, mouse_cbtn);
+		//DBG_V("mouse xmit: cdx %d cdy %d btn %d\n", mouse_cdx, mouse_cdy, mouse_cbtn);
 
 		// slow down
 		int cdx = mouse_cdx / SPEED_DIV;
@@ -253,12 +278,16 @@ void check_mouse_xmit() {
 		int8_t tdx = cdx > 127 ? 127 : cdx < -127 ? -127 : cdx;
 		int8_t tdy = cdy > 127 ? 127 : cdy < -127 ? -127 : cdy;
 
-		DBG_V("mouse xmit: tdx %d tdy %d\n", tdx, tdy);
+		DBG_VV("mouse xmit: tdx %d tdy %d\n", tdx, tdy);
+
+		set_mode(Mode2_RelativeCursorControl);
 
 		kbd_xmit_3(
 			0xf0 ^ (mouse_cbtn << 4),
 			tdx,
 			-tdy); // apollo Y is inverse
+
+		set_mode(Mode1_Keystate);
 
 		mouse_cdx = 0;
 		mouse_cdy = 0;
@@ -323,7 +352,7 @@ void on_keyboard_rx() {
 		kbd_cmd = (kbd_cmd << 8) | ch;
 		kbd_cmd_bytes++;
 
-        DBG(" command %08lx (%d bytes)\n", kbd_cmd, kbd_cmd_bytes);
+        DBG_V(" command %08lx (%d bytes)\n", kbd_cmd, kbd_cmd_bytes);
 
         bool cmd_handled = true;
 
@@ -343,7 +372,7 @@ void on_keyboard_rx() {
 		} else if (kbd_cmd_bytes == 2) {
 			switch (kbd_cmd) {
 				case 0x1221: // keyboard identification
-					DBG("keyboard ident request\n");
+					DBG_V("keyboard ident request\n");
 
 					//kbd_tx_str("\xff\x12\x21"); // already sent as part of loopback
 					kbd_tx_str("3-@\r2-0\rSD-03863-MS\r"); // english ident
@@ -403,7 +432,7 @@ void on_keyboard_rx() {
 		// after mouse, sometimes the (pc?) sends 0xff10045e 00000000
 
 		if (cmd_handled) {
-			DBG(" command handled\n");
+			DBG_V(" command handled\n");
 			kbd_reading_cmd = false;
 			kbd_cmd = 0;
 			kbd_cmd_bytes = 0;
