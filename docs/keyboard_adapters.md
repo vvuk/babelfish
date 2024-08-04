@@ -62,7 +62,27 @@ RJ45 connector:
 
 ## ADB
 
-(todo)
+Looking at male cable end:
+
+```
+      3  4
+     1    2
+       == 
+
+1 - yellow - DATA
+2 - green - power sw
+3 - red - VCC 5V
+4 - black  - GND
+```
+
+| Babelfish DB9 | ADB Mini-DIN 4 |
+| :--- | :--- |
+| 1 (GND) | 4 (GND) (black) |
+| 2 (TX A) | 1 (ADB) (yellow) |
+| 3 (TX B) | 2 (Power SW) (green) |
+| 6 (VCC_5V) | 3 (5V) (red) |
+
+Cable I have has black, yellow, red, green. 
 
 ## Sun (pre-PS/2)
 
