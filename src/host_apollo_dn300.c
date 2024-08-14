@@ -75,10 +75,7 @@ static void kbd_tx_str(const char *str) {
 	}
 }
 
-static void check_mouse_xmit();
-
 void apollo_dn300_update() {
-	check_mouse_xmit();
 }
 
 void apollo_dn300_kbd_event(const KeyboardEvent event) {
@@ -142,61 +139,8 @@ void apollo_dn300_kbd_event(const KeyboardEvent event) {
 	kbd_xmit_key(code);
 }
 
-// report mouse at most 1000/200 times per second
-#define MOUSE_RATE_MS 100
-#define SPEED_DIV 2
-
-static int mouse_cdx = 0;
-static int mouse_cdy = 0;
-static int mouse_cbtn = 0;
-static int mouse_lbtn = 0;
-static uint32_t mouse_last_report = 0;
-
-void check_mouse_xmit() {
-#if 0
-	if (mouse_cdx == 0 && mouse_cdy == 0 && mouse_cbtn == mouse_lbtn)
-		return;
-
-	if (kbd_mode == Mode0_Compatibility)
-		return;
-
-	uint32_t now_ms = to_ms_since_boot(get_absolute_time());
-	if (now_ms - mouse_last_report >= MOUSE_RATE_MS || mouse_cbtn != mouse_lbtn) {
-		set_mode(Mode2_RelativeCursorControl);
-
-		//DBG_V("mouse xmit: cdx %d cdy %d btn %d\n", mouse_cdx, mouse_cdy, mouse_cbtn);
-
-		// slow down
-		int cdx = mouse_cdx / SPEED_DIV;
-		int cdy = mouse_cdy / SPEED_DIV;
-
-		// clamp
-		int8_t tdx = cdx > 127 ? 127 : cdx < -127 ? -127 : cdx;
-		int8_t tdy = cdy > 127 ? 127 : cdy < -127 ? -127 : cdy;
-
-		DBG_VV("mouse xmit: tdx %d tdy %d\n", tdx, tdy);
-
-		set_mode(Mode2_RelativeCursorControl);
-
-		kbd_xmit_3(
-			0xf0 ^ (mouse_cbtn << 4),
-			tdx,
-			-tdy); // apollo Y is inverse
-
-		set_mode(Mode1_Keystate);
-
-		mouse_cdx = 0;
-		mouse_cdy = 0;
-		mouse_lbtn = mouse_cbtn;
-		mouse_last_report = now_ms;
-	}
-#endif
-}
-
 void apollo_dn300_mouse_event(const MouseEvent event) {
-	mouse_cdx += event.dx;
-	mouse_cdy += event.dy;
-	mouse_cbtn = event.buttons;
+	// TBD once it's booting and we can run the mouse test
 }
 
 #define Yes 1
