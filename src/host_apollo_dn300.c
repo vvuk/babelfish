@@ -10,17 +10,6 @@
 
 #include "babelfish.h"
 
-/**********************
-
-From reading domain_os disassembly, the host to keyboard protocol looks like this:
-
-- Commands start with 0xff.
-- Bytes are read after 0xff until a valid command is received.
-- It is immediately processed.
-- 0x00 outside of preceiding 0xff is ignored.
-
-***********************/
-
 #define UART_KEYBOARD_NUM 0
 #define UART_KEYBOARD uart0
 #define UART_KEYBOARD_IRQ UART0_IRQ
