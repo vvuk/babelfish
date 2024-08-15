@@ -29,9 +29,13 @@ jobs:
           ref: 2.0.0
           path: pico-sdk
 
-      - name: Checkout pico-sdk submodules
+      - name: Checkout pico-sdk submodules and PIO-USB
         working-directory: ${{github.workspace}}/pico-sdk
-        run: git submodule update --init
+        run: |
+          git submodule update --init
+          cd lib/tinyusb && python tools/get_deps.py rp2040
+          git -C hw/mcu/raspberry_pi/Pico-PIO-USB fetch && git -C hw/mcu/raspberry_pi/Pico-PIO-USB checkout main
+
       - name: Install dependencies
         run: |
           brew install cmake ninja

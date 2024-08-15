@@ -11,9 +11,9 @@ set(CMAKE_CXX_STANDARD 17)
 #set(PICO_NO_FLASH 1)
 
 # set global define USBH_DEBUG=2
-add_compile_definitions(USBH_DEBUG=2)
-add_compile_definitions(CFG_TUSB_DEBUG=1)
-add_compile_definitions(CFG_TUSB_DEBUG_PRINTF=ext_tu_printf)
+#add_compile_definitions(USBH_DEBUG=2)
+#add_compile_definitions(CFG_TUSB_DEBUG=1)
+#add_compile_definitions(CFG_TUSB_DEBUG_PRINTF=ext_tu_printf)
 
 pico_sdk_init()
 
