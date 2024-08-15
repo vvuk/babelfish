@@ -9,6 +9,7 @@
 #define __BABELFISH_H__
 
 #include <pico/stdlib.h>
+#include <hardware/clocks.h>
 
 #include "babelfish_hw.h"
 #include "events.h"

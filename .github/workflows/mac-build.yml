@@ -1,0 +1,52 @@
+name: Build on macOS
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'test_workflow'
+      - 'develop'
+      - 'main'
+
+jobs:
+  build:
+    runs-on: macos-12
+    steps:
+      - name: Clean workspace
+        run: |
+          echo "Cleaning up previous run"
+          rm -rf "${{ github.workspace }}"
+          mkdir -p "${{ github.workspace }}"
+
+      - name: Checkout babelfish
+        uses: actions/checkout@v2
+        with:
+          path: babelfish
+
+      - name: Checkout pico-sdk
+        uses: actions/checkout@v2
+        with:
+          repository: raspberrypi/pico-sdk
+          ref: 2.0.0
+          path: pico-sdk
+
+      - name: Checkout pico-sdk submodules and PIO-USB
+        working-directory: ${{github.workspace}}/pico-sdk
+        run: |
+          git submodule update --init
+          cd lib/tinyusb && python tools/get_deps.py rp2040
+          git -C hw/mcu/raspberry_pi/Pico-PIO-USB fetch && git -C hw/mcu/raspberry_pi/Pico-PIO-USB checkout main
+
+      - name: Install dependencies
+        run: |
+          brew install cmake ninja
+          brew install --cask gcc-arm-embedded
+
+      - name: Build Babelfish Firmware
+        working-directory: ${{github.workspace}}/babelfish
+        shell: bash
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G "Ninja" -DPICO_SDK_PATH=../../pico-sdk -DCMAKE_BUILD_TYPE=Debug
+          cmake --build .
+

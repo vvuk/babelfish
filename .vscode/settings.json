@@ -31,6 +31,27 @@
         "events.h": "c",
         "babelfish_hw.h": "c",
         "stdio_usb.h": "c",
-        "hid_codes.h": "c"
+        "hid_codes.h": "c",
+        "reset_interface.h": "c",
+        "usb_reset_interface.h": "c",
+        "typeinfo": "c",
+        "system_error": "c",
+        "*.tcc": "c",
+        "numeric": "c",
+        "ostream": "c",
+        "cassert": "c",
+        "cctype": "c",
+        "cerrno": "c",
+        "climits": "c",
+        "clocale": "c",
+        "cmath": "c",
+        "cstddef": "c",
+        "cstdint": "c",
+        "cstdio": "c",
+        "cstdlib": "c",
+        "ctime": "c",
+        "cwchar": "c",
+        "cwctype": "c",
+        "*.inc": "c"
     }
 }
