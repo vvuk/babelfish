@@ -5,7 +5,7 @@ on:
     branches:
       - 'test_workflow'
       - 'develop'
-      - 'master'
+      - 'main'
 
 jobs:
   build:
