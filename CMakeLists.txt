@@ -17,6 +17,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
+# target_compile_options(pico_standard_link INTERFACE -mapcs-frame -mtpcs-frame -mtpcs-leaf-frame -fno-omit-frame-pointer)
 # include(${CMAKE_CURRENT_LIST_DIR}/external/pico-pio-usb/CMakeLists.txt)
 
 add_executable(babelfish
@@ -29,6 +30,7 @@ add_executable(babelfish
   src/host_adb.c
   src/host_apollo.c
   src/host_apollo_dn300.c
+  src/host_next.c
   src/host_test.c
   src/output.c
   src/debug.c
@@ -42,6 +44,8 @@ add_executable(babelfish
 
 target_include_directories(babelfish PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}/src)
+
+pico_generate_pio_header(babelfish ${CMAKE_CURRENT_LIST_DIR}/src/next.pio)
 
 target_link_libraries(babelfish PUBLIC
   pico_stdlib
@@ -64,8 +68,7 @@ target_compile_definitions(babelfish PUBLIC
 
 pico_add_extra_outputs(babelfish)
 
-
-if (FALSE)
+if (INCLUDE_TESTS)
 add_executable(babelfish_test
   src/babelfish_test.c
   src/debug.c
@@ -99,21 +102,48 @@ pico_enable_stdio_usb(babelfish_test 0)
 pico_add_extra_outputs(babelfish_test)
 
 add_executable(hwtest
-        src/hwtest.c
+  src/hwtest.c
+
+  src/bootmode.c
+  src/hid_app.c
+  src/host_sun.c
+  src/host_sun_mouse.c
+  src/host_sun_keyboard.c
+  src/host_adb.c
+  src/host_apollo.c
+  src/host_test.c
+  src/output.c
+  src/debug.c
+  src/usb_descriptors.c
+  src/usb_reset_interface.c
+  src/hw_aux.c
+  src/cmd.c
+
+  src/stdio_nusb/stdio_usb.c
 )
 
+pico_generate_pio_header(hwtest ${CMAKE_CURRENT_LIST_DIR}/src/next.pio)
+
 target_link_libraries(hwtest PUBLIC
-        pico_stdlib
-        pico_sync
-        pico_multicore
-        pico_unique_id
-        pico_usb_reset_interface
+  pico_stdlib
+  pico_sync
+  pico_multicore
+  pico_unique_id
+  pico_usb_reset_interface
+  hardware_pio
+  tinyusb_host
+  tinyusb_device
+  tinyusb_pico_pio_usb
 )
+
+target_include_directories(hwtest PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/src)
 target_compile_definitions(hwtest PRIVATE
-        DEBUG
+  DEBUG
 )
 pico_enable_stdio_uart(hwtest 0)
 pico_enable_stdio_usb(hwtest 0)
 
+#pico_set_binary_type(hwtest no_flash)
 pico_add_extra_outputs(hwtest)
 endif()

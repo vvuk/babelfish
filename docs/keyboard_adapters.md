@@ -91,3 +91,12 @@ Cable I have has black, yellow, red, green.
 ## SGI (pre-PS/2)
 
 (todo)
+
+## NeXT
+
+MCLK   7   yellow
+MOUT   2   orange
+MIN    3   green
+-12v  nc
+NC    nc
+GND    1   brown

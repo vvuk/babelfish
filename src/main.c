@@ -28,6 +28,7 @@ HOST_PROTOTYPES(sun);
 HOST_PROTOTYPES(adb);
 HOST_PROTOTYPES(apollo);
 HOST_PROTOTYPES(apollo_dn300);
+HOST_PROTOTYPES(next);
 HOST_PROTOTYPES(test_3v3);
 
 HostDevice hosts[] = {
@@ -35,6 +36,7 @@ HostDevice hosts[] = {
   HOST_ENTRY(adb, "ADB emulation. Ch A RX bidirectional. Shifter setting 5V."),
   HOST_ENTRY(apollo, "Apollo emulation. Ch A RX/TX for keyboard and mouse. Shifter setting 5V."),
   HOST_ENTRY(apollo_dn300, "Apollo DN300 emulation. Ch A RX/TX for keyboard and mouse. Shifter setting 5V."),
+  HOST_ENTRY(next, "NeXT emulation. Ch A used for MOUT/CLK, Ch B used for MIN. Shifter setting 5V for A TX+RX, 3v3 for B TX."),
   HOST_ENTRY(test_3v3, "3v3 TTL test. Transmits A on Ch A TX and B on Ch B TX every 0.5s, 1200 baud 8n1."),
   { 0 }
 };
@@ -59,7 +61,7 @@ ChannelConfig channels[NUM_CHANNELS] = {
 };
 
 // TODO read from flash
-int g_current_host_index = 3;
+int g_current_host_index = 2;
 
 HostDevice *host = NULL;
 KeyboardEvent kbd_event_queue[MAX_QUEUED_EVENTS];

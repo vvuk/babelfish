@@ -1,0 +1,83 @@
+; NeXT Sound Box interface
+; 5MHz bidirectional serial
+; 1 start bit (high), 8 bit command, optional 32 bit data, 2 stop bit (both low)
+
+; This program waits for the clock pins, so, it needs to run quite fast, faster than the NeXT 5MHz
+; clock speed. Running it at 60MHz seems to be good enough.
+
+;; this program reads the clock and samples values on the up clock
+
+.program next_rx
+;; note: these are on TX_A and RX_A on babelfish-- we use TX_A GPIO (0) as data (input), and RX_A as CLK
+.define DATA 0
+.define CLK 1
+
+.wrap_target
+rx_start:
+    wait 0 pin CLK
+    wait 1 pin CLK
+    in pins, 1
+    mov y, isr
+    jmp !y rx_start ;; if not a start bit, wait again
+
+    wait 0 pin CLK
+    wait 1 pin CLK
+    in pins, 1
+    set x, 8 ;; 6+1 more times to go through below loop, plus the 2 stop bits
+
+    set y, 1 ;; tell the loop below to go again
+    ;;;;mov y, isr ;; save this bit, to determine data
+
+rx_loop:
+    wait 0 pin CLK
+    wait 1 pin CLK
+    in pins, 1
+    jmp x-- rx_loop
+    push noblock
+
+    jmp !y rx_end ;; rx_stopbits ;; if y is already 0, then no data, or we just finished reading data
+    set x, 31          ;; if y is 1, then go through read loop again
+    jmp y-- rx_loop    ;; set y to 0 and read 32 bits of data in loop
+
+;; Note: the program above always reads 1 + 8 + 32 + 2 bits, even if there is no data.  A version
+;; that does check if data is present is possible, but I can't make it fit in the 32 instruction limit
+;; (along with the tx program below). This is fine so far; it will only break if the host sends a bunch
+;; of data-less commands one immediately after the other, and there aren't many of those.
+
+;;rx_stopbits:
+;;    set x, 1
+;;rx_stoploop:
+;;    wait 0 pin CLK
+;;    wait 1 pin CLK
+;;    in pins, 1
+;;    jmp x-- rx_stoploop
+;;    push noblock
+
+rx_end:
+    irq 0
+    pull block ;; pull waiting for the program to put a dummy value here to synchronize.
+.wrap
+
+.program next_tx
+
+; out pins are expected to just be the TX pin
+; in pins are expected to just be the CLK pin
+
+; note that start and stop bits need to be included in the data
+
+.wrap_target
+tx_start:
+    out null, 32        ;; ensure osr OSR is empty, to guarantee pull
+    pull block          ;; pull number of bits to write; block until available
+    mov x, osr          ;; save number of bits (which should be 1 fewer than actual number!)
+    out null, 32        ;; clear OSR again; we'll pull as we write bits
+
+tx_loop:
+    wait 1 pin 0        ;; synchronize
+    pull ifempty        ;; refill OSR from FIFO if it's empty
+    wait 0 pin 0        ;; wait for a falling edge on clock; set up for rising edge
+    out pins, 1         ;; set up output after falling edge
+    jmp x-- tx_loop
+.wrap
+
+
