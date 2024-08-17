@@ -7,7 +7,9 @@ Babelfish is a hardware device and associated software to allow using a USB keyb
 
 Planned or in progress emulations include:
 
-* Apollo Keyboard (for use with Domain/OS)
+* Apollo
+  * DN[3-5]XXX, DN10000, HP9000 series 400 with Domain/OS.
+  * DN300
 * SGI (pre-PS2)
 * Sun (pre-PS2)
 * Mac ADB

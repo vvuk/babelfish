@@ -153,5 +153,7 @@ bool cmd_process_event(KeyboardEvent ev)
         s_cmd_saved_ev = ev;
         return true;
     }
+
+    return false;
 }
 

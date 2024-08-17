@@ -28,6 +28,7 @@ add_executable(babelfish
   src/host_sun_keyboard.c
   src/host_adb.c
   src/host_apollo.c
+  src/host_apollo_dn300.c
   src/host_test.c
   src/output.c
   src/debug.c

@@ -40,6 +40,26 @@ CPU end of _*cable*_ (yes, these are the actual DIN8 pin numbers):
 | 7 (RX A) | 5 (Data to keyboard) (yellow) |
 | | 4 (RESET) (dark brown) |
 
+## Apollo DN300
+
+RJ45 connector:
+
+```
+      | 1 2 3 4 5 6 7 8 |      1 - NC
+      |                 |      2 - NC
+      +---+         +---+      3 - +3V3 (maybe?)
+          +-+     +-+          4 - Data to CPU (TXD)
+            +-----+            5 - 1.2kHz clock
+                               6 - Logic ground
+                               7 - NC
+                               8 - NC
+```
+
+| Babelfish DB9 | Apollo DN300 RJ45 |
+| :--- | :--- |
+| 1 (GND) | 6 (Logic ground) |
+| 2 (TX A) | 4 (Data to CPU) |
+
 ## ADB
 
 (todo)
